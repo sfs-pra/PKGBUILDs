@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Icon=yandex-browser
+Name=Yandex-browser updater
+Name[ru]=Обновление yandex-browser
+Comment=Checking for yandex-browser updates via the Internet
+Comment[ru]=Проверка обновлений yandex-browser через интернет
+Exec=sh -c "sleep 25 && yandex-browser-chk"

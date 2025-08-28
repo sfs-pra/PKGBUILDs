@@ -1,0 +1,49 @@
+# Maintainer: Aaron Fischer <mail@aaron-fischer.net>
+# Contributor: Steven Allen <steven@stebalien.com>
+# Contributor: trile7 at gmail dot com
+# Contributor: Ernia <monghitri@aruba.it>
+v=3
+pkgname=yad-gtk$v
+_pkgname=yad
+pkgver='0.40.90'
+pkgrel=1
+pkgdesc="A fork of zenity - display graphical dialogs from shell scripts or command line"
+url="https://github.com/v1cont/yad"
+#"http://sourceforge.net/projects/yad-dialog"
+arch=('x86_64' 'i686')
+license=('GPL3')
+depends=('gtk'$v'') 
+# 'webkit2gtk')
+makedepends=('intltool')
+replaces=('yad-gtk3' 'yad')
+provides=('yad-gtk3' 'yad')
+conflicts=('yad-gtk3' 'yad')
+#source=("${url}/files/${_pkgname}-${pkgver}.tar.xz")
+source=("git+$url")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "${srcdir}/${_pkgname}"
+#  git describe --long | sed -r 's/([^-]*-g)/r\1/;s/-/./g'
+    #  awk '/^PACKAGE_VERSION / {print $3}' Makefile
+    awk -F= '/^PACKAGE_VERSION/ {print $2}' configure
+}
+
+prepare() {
+  cd "${srcdir}/${_pkgname}"
+    autoreconf -ivf && intltoolize
+}
+
+
+build() {
+  cd "${srcdir}/${_pkgname}"
+  ./configure --prefix=/usr --with-gtk=gtk$v --enable-icon-browser #--enable-html
+    make clean
+  make
+}
+
+package() {
+  cd "${srcdir}/${_pkgname}"
+  make DESTDIR="${pkgdir}" install
+}
+

@@ -1,0 +1,28 @@
+pkgname=xdialog3
+pkgver=2.7w
+#pkgver=r101.df679a8
+pkgrel=1
+pkgdesc="A tool to display dialog boxes from shell scripts 4 xorg & wayland"
+arch=('x86_64')
+url="https://github.com/wdlkmpx/Xdialog"
+license=('GPL2')
+depends=('gtk3')
+source=("${pkgname}::git+$url")
+sha256sums=('SKIP')
+
+Xpkgver() {
+  cd "${pkgname}"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cd "$srcdir/$pkgname"
+  ./configure \
+    --prefix=/usr 
+  make
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  make DESTDIR="$pkgdir" install
+}

@@ -1,0 +1,17 @@
+#!/bin/sh
+#250409 sfs
+m=/opt/yandex/browser/modules
+v="`awk -F'"version":' '/"version": / {print $2}' $m  |awk -F'"' '{print $2}'`"
+#'
+v1="`wget -qO- "https://repo.yandex.ru/yandex-browser/deb/pool/main/y/yandex-browser-stable/" | awk -F'\"' '/_amd64.deb/ {print $2}' |sort -V |tail -1 |awk -F_ '{print $2}' |awk -F- '{print $1}'`"
+
+NTFA(){
+    i=gtk-dialog-warning
+    yad --Xwidth=600 --image-on-top --image=$i --fixed \
+    --window-icon="$i" --name=$i --title="$1" \
+    --text "<span color=\"red\"><b>$1</b></span>
+<i>$2</i>" >/dev/null 
+}
+[ "$v" = "$v1" ] && echo "No updated yandex-browser" && exit 0
+
+NTFA "Yandex-browser" "upgrade from version $v to version $v1" 

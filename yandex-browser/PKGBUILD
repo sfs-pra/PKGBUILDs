@@ -1,0 +1,64 @@
+# Maintainer: sfs <sfslinux at gmail.com>
+
+_pkgname=browser-stable
+pkgname=yandex-browser
+pkgver=25.2.1.939
+pkgrel=1
+#epoch=1
+
+pkgdesc="The web browser from Yandex.
+ Yandex Browser is a browser that combines a minimal design with sophisticated technology to make the web faster, safer, and easier."
+arch=("x86_64")
+url='https://browser.yandex.com/'
+license=("custom:yandex-browser")
+categories=("network")
+provides=(yandex-browser)
+conflicts=("yandex-browser" "yandex-browser-stable" "yandex-browser-corporate")
+depends=( "yad" "binutils"  "alsa-lib" "at-spi2-atk" "libcups" "curl" "dbus" "mesa" "gdbm" "nspr" "nss" "pango"
+"wayland" "libxcomposite" "libxdamage" "libxkbcommon" "libxkbfile" "libxrandr" )
+#"ttf-liberation"  "gtk4" "squashfs-tools" "wget" "xdg-utils" "harfbuzz-icu"
+#"vulkan-driver" "vulkan-icd-loader" "ffmpeg" "jq")
+optdepends=(
+    "ttf-liberation"
+    "speech-dispatcher"
+    "gstreamer-meta"
+    "cryptopro-csp-k1"
+)
+makedepends=('wget' 'tar' 'libarchive' 'unzip')
+source=("yandex-browser-chk" "yandex-browser-chk.desktop")
+sha256sums=("2ea732f64066df920d53a83f7ed42f3954d0876b43247dd35a66e6e30d1f3aaf" "54b65986a7dc93c132db79dd18ba6b616af3567a9d03fcbbeafb63713369a21f")
+install=yandex-browser.install
+
+pkgver() {
+    echo ${_pkgver}
+}
+
+prepare() {
+    _pkgver="`wget -qO- "https://repo.yandex.ru/yandex-browser/deb/pool/main/y/yandex-browser-stable/" | awk -F'\"' '/_amd64.deb/ {print $2}' |sort -V |tail -1 |awk -F_ '{print $2}' |awk -F- '{print $1}'`"
+    source=("https://repo.yandex.ru/yandex-browser/deb/pool/main/y/yandex-${_pkgname}/yandex-${_pkgname}_${_pkgver}-1_amd64.deb")
+    wget "$source" -O ${pkgname}-${_pkgver}-1.deb &&
+	bsdtar -xf ${pkgname}-${_pkgver}-1.deb &&
+        tar -xf data.tar.xz
+}
+
+package() {
+    cp -dr --no-preserve=ownership opt usr "${pkgdir}"/
+    install -D -m0644 "${pkgdir}"/opt/yandex/browser/product_logo_128.png "${pkgdir}"/usr/share/pixmaps/${pkgname}.png
+    chmod 4755 "${pkgdir}"/opt/yandex/browser/yandex_browser-sandbox
+
+    fu="${pkgdir}/opt/yandex/browser/update-ffmpeg"
+    f="`awk -F'\"' '/SUITABLE_URLS=/ {print $4}' "$fu"`"
+    fv="`wget  --quiet -O -  https://nwjs.io/versions.json  |awk '/"version": "/ || /"chromium": "/ {print $0}'  |sed -e ':a;N;$!ba;s/,\n//g;s/0d0a/\n/g' |awk -F'"' '/'$f'/ {print $4 }' |tr -d v`"
+    #'
+    fw="https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/download/$fv/$fv-linux-x64.zip"
+    #echo "ffmpeg $1 $2 $fv $fw " >11 ;exit
+    mkdir -p /tmp/libf &&
+    wget "$fw" -O /tmp/libf/libffmpeg.zip 
+    unzip /tmp/libf/libffmpeg.zip -d /tmp/libf  
+    mv /tmp/libf/libffmpeg.so "`dirname "$fu"`" || 
+	{ echo "Yandex-browser" "Error libffmpeg update"  && exit 1 ; }
+    strip "`dirname "$fu"`"/libffmpeg.so
+    rm -R /tmp/libf
+    install -D -m0755 yandex-browser-chk "${pkgdir}"/usr/bin/yandex-browser-chk 
+    install -D -m0644 yandex-browser-chk.desktop "${pkgdir}"/etc/xdg/autostart/yandex-browser-chk.desktop
+}

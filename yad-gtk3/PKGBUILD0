@@ -1,0 +1,36 @@
+# Maintainer: Aaron Fischer <mail@aaron-fischer.net>
+# Contributor: Steven Allen <steven@stebalien.com>
+# Contributor: trile7 at gmail dot com
+# Contributor: Ernia <monghitri@aruba.it>
+
+pkgname=yad-gtk3
+_pkgname=yad
+pkgver=0.40.0
+pkgrel=2
+pkgdesc="A fork of zenity - display graphical dialogs from shell scripts or command line"
+url="http://sourceforge.net/projects/yad-dialog"
+arch=('x86_64' 'i686')
+license=('GPL3')
+depends=('gtk3') 
+# 'webkit2gtk')
+makedepends=('intltool')
+provides=('yad-gtk3' 'yad')
+conflicts=('yad-gtk3' 'yad')
+source=("${url}/files/${_pkgname}-${pkgver}.tar.xz")
+sha256sums=('c2d0b7d1b6d3a0877299faa00db75d58c974f81fce72d520a3a84e67d1d60ef4')
+
+prepare() {
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+}
+
+build() {
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+  ./configure --prefix=/usr --with-gtk=gtk3 --enable-icon-browser #--enable-html
+  make
+}
+
+package() {
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+  make DESTDIR="${pkgdir}" install
+}
+
