@@ -1,0 +1,39 @@
+# Contributor: sfs <sfslinux@gmail.com>
+pkgname=pup-volume-monitor
+pkgver=0.2w
+pkgrel=1
+pkgdesc="$pkgname"
+arch=(i686 x86_64 aarch64)
+url="https://github.com/puppylinux-woof-CE/woof-CE/tree/testing/woof-code/rootfs-petbuilds/pup-volume-monitor"
+license=('GPL')
+groups=(ftp)
+depends=('gtk3' 'glib2' 'util-linux-libs')
+install=
+source=($pkgname-$pkgver.tar.xz)
+source=("$pkgname-$pkgver.zip::https://github.com/01micko/pup-volume-monitor/archive/aa2fbe6f815909f060027ba1e0f93075b91e4384.zip"
+    "$pkgname.service")
+noextract=()
+md5sums=('SKIP'
+	'SKIP')
+
+prepare() {
+  cd $srcdir
+  ln -s pup-volume-monitor-aa2fbe6f815909f060027ba1e0f93075b91e4384 pup-volume-monitor-0.2w
+}
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  ./autogen.sh
+  ./configure --prefix=/usr  --sbindir=/usr/bin --libexecdir=/usr/lib --sysconfdir=/etc --disable-static \
+  $([ "`uname -m`" = "aarch64" ] && echo " --host=aarch64-unknown-linux-gnu  --build=aarch64-unknown-linux-gnu ")
+  make || return 1
+}
+
+package() {
+  cd $pkgname-$pkgver
+  make DESTDIR="$pkgdir" install
+  install -Dm644 ../$pkgname.service -t "$pkgdir/usr/lib/systemd/system/"
+}
+
+
+# vim:set ts=2 sw=2 et:

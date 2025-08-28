@@ -1,0 +1,56 @@
+# Maintainer: Brian Bidulock <bidulock@openss7.org>
+# Contributor: Aljosha Papsch <papsch.al@gmail.com>
+# Contributor: Benjamin Wild <benwild@gmx.de>
+
+pkgname=network-manager-applet-gtk2
+_pkgname=network-manager-applet
+#pkgver=0.9.10.0 gtk3
+#pkgver=0.9.8.8 
+pkgver=0.9.8.9
+#pkgver=0.9.9.95 gtk3
+pkgrel=1
+pkgdesc="GNOME frontends to NetWorkmanager compiled for gtk2"
+arch=(i686 x86_64)
+license=(GPL)
+url="http://www.gnome.org/projects/NetworkManager/"
+#depends=("networkmanager>=${pkgver%.*}" libsecret gtk2 libnotify
+#         gnome-icon-theme mobile-broadband-provider-info iso-codes)
+depends=("networkmanager>=${pkgver%.*}" libsecret gtk2 libnotify
+          mobile-broadband-provider-info )
+#makedepends=(intltool gnome-bluetooth gobject-introspection)
+makedepends=(intltool  gobject-introspection)
+optdepends=('gnome-bluetooth: for PAN/DUN support')
+options=('!emptydirs')
+provides=("$_pkgname=$pkgver")
+conflicts=("$_pkgname")
+install=network-manager-applet.install
+source=(http://ftp.gnome.org/pub/GNOME/sources/$_pkgname/0.9/$_pkgname-$pkgver.tar.xz)
+sha256sums=('SKIP')
+
+build() {
+  cd ${_pkgname}-${pkgver}
+  ./configure --prefix=/usr --sysconfdir=/etc \
+      --localstatedir=/var \
+      --libexecdir=/usr/lib/networkmanager \
+      --disable-static \
+     --disable-more-warnings \
+      --disable-maintainer-mode \
+      --disable-migration \
+      --with-modem-manager-1 \
+      --disable-iso-codes \
+      --enable-introspection=no \
+      --with-gtkver=2\
+\
+      --disable-iso-codes \
+      --enable-introspection=no \
+
+  # https://bugzilla.gnome.org/show_bug.cgi?id=655517
+  sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+
+  make V=0
+}
+
+package() {
+  cd ${_pkgname}-${pkgver}
+  make DESTDIR="${pkgdir}" install
+}

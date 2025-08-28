@@ -1,0 +1,87 @@
+# Maintainer: Alexander F. Rødseth <xyproto@archlinux.org>
+# Contributor: Paulo Matias <matiasΘarchlinux-br·org>
+# Contributor: Georgij Kondratjev <smpuj@bk.ru>
+# Contributor: Daniel J Griffiths <ghost1227@archlinux.us>
+
+v=3 #gtk
+pkgname=netsurf-gtk$v
+pkgver=3.9
+_pkgname=netsurf
+pkgrel=2
+pkgdesc='Lightweight and fast web browser'
+arch=(x86_64 i686)
+url='https://www.netsurf-browser.org/'
+license=(MIT GPL2)
+depends=(curl gtk$v  libjpeg-turbo )
+# vim is needed only for xxd when building
+makedepends=(bison flex gperf perl-html-parser  vim)
+source=("https://download.netsurf-browser.org/netsurf/releases/source-full/netsurf-all-$pkgver.tar.gz")
+#https://ci.netsurf-browser.org/fedora/f28/source/netsurf-3.9~4900-1.fc28.src.rpm
+#        netsurf.sh)
+sha256sums=('SKIP')
+#            '34c1f41c02ff3791a1b734197d99ec7f58c403dee05f0f9b7b9b3509d32b51ac')
+
+Xprepare() {
+  cd "$_pkgname-all-$pkgver/$_pkgname"
+
+  # Fix compilation issues
+  sed -i 's:libutf8proc/::;s:UTF8PROC_CCC_VIRAMA:UTF8PROC_BIDI_CLASS_EN:' \
+    utils/idna.c
+
+  # Use "netsurf" as the name of the executable in /usr/bin
+  setconf frontends/gtk/res/netsurf-gtk.desktop 'Exec=netsurf %u'
+
+  # Set build configuration in Makefile.defaults
+  for opt in \
+    NETSURF_UA_FORMAT_STRING='"NetSurf/%d.%d (%s; Arch Linux)"' 
+#    NETSURF_USE_DUKTAPE=YES
+  do
+    setconf Makefile.defaults "$opt"
+  done
+}
+
+build() {
+  CFLAGS="$CFLAGS -w -Os -funroll-loops" make \
+    -C "$_pkgname-all-$pkgver" \
+    NETSURF_GTK_MAJOR=$v \
+    TARGET=gtk \
+    LIBDIR=lib \
+    INCLUDEDIR=include \
+    PREFIX=/usr
+}
+
+package() {
+  make -C "$_pkgname-all-$pkgver" \
+    TARGET=gtk \
+    NETSURF_GTK_MAJOR=$v \
+    LIBDIR=lib \
+    INCLUDEDIR=include \
+    DESTDIR="$pkgdir" \
+    PREFIX=/usr \
+    install
+
+  # Launch script
+#  install -Dm755 $_pkgname.sh "$pkgdir/usr/bin/$_pkgname"
+echo "\
+#!/bin/sh
+shortname=`echo $LANG | cut -b1-2`
+if [[ -d /usr/share/netsurf/$shortname ]]; then
+  /usr/bin/netsurf-gtk$v "$@" &
+else
+  LANG=en /usr/bin/netsurf-gtk$v "$@" &
+fi
+" > "$pkgdir/usr/bin/$_pkgname-gtk" && chmod 755 "$pkgdir/usr/bin/$_pkgname-gtk"
+
+  cd "$_pkgname-all-$pkgver/$_pkgname"
+
+  # Desktop icon and shortcut
+  install -Dm644 frontends/gtk/res/$_pkgname.xpm \
+    "$pkgdir/usr/share/pixmaps/$_pkgname.xpm"
+  install -Dm644 frontends/gtk/res/$_pkgname-gtk.desktop \
+    "$pkgdir/usr/share/applications/$_pkgname.desktop"
+
+  # License
+  install -Dm644 COPYING "$pkgdir/usr/share/licenses/$_pkgname/COPYING"
+}
+
+# vim: ts=2 sw=2 et:

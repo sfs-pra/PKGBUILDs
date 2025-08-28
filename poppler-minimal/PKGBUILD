@@ -1,0 +1,41 @@
+# Contributor: Jan de Groot <jgc@archlinux.org>
+# Maintainer: Florian Bruhin (The-Compiler) <archlinux.org@the-compiler.org>
+# vim: set ts=2 sts=2 et ft=sh tw=79:
+
+pkgname='poppler-minimal'
+pkgver=0.54.0
+#pkgver=0.64.0
+#pkgver=0.33.0
+
+pkgrel=3
+arch=(i686 x86_64)
+license=('GPL')
+#makedepends=('icu')
+options=('!libtool' '!emptydirs')
+pkgdesc="PDF rendering library based on xpdf 3.0 (minimal version)"
+depends=('fontconfig' 'gcc-libs')
+conflicts=("poppler" "poppler-glib")
+provides=("poppler" "poppler-glib")
+url="http://poppler.freedesktop.org/"
+source=(http://poppler.freedesktop.org/poppler-${pkgver}.tar.xz)
+sha1sums=('SKIP')
+#56c195f2c5e56fa017d32c0507a31b226f48bedb')
+
+build() {
+  cd "${srcdir}/poppler-${pkgver}"
+  autoreconf -fi
+  ./configure \
+      --prefix=/usr \
+      --sysconfdir=/etc \
+      --localstatedir=/var \
+      --disable-static \
+      --enable-libopenjpeg=none \
+--enable-poppler-glib \
+--disable-libnss
+  make
+}
+
+package() {
+  cd "${srcdir}/poppler-${pkgver}"
+  make DESTDIR="${pkgdir}" install
+}

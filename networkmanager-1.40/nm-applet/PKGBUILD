@@ -1,0 +1,81 @@
+# Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
+# Contributor: Jan de Groot <jgc@archlinux.org>
+# Contributor: Arjan Timmerman <arjan@archlinux.org>
+# Contributor: Wael Nasreddine <gandalf@siemens-mobiles.org>
+# Contributor: Tor Krill <tor@krill.nu>
+# Contributor: Will Rea <sillywilly@gmail.com>
+
+pkgbase=network-manager-applet
+pkgname=(network-manager-applet-light nm-connection-editor-light)
+pkgver=1.28.0
+pkgrel=1
+pkgdesc="Applet for managing network connections w\o polkit nss blues mm doc"
+url="https://gitlab.gnome.org/GNOME/network-manager-applet"
+arch=(x86_64)
+license=(GPL LGPL)
+Xmakedepends=(libsecret libnotify libmm-glib gobject-introspection git gtk-doc meson libnma
+             libappindicator-gtk3 libgudev)
+makedepends=(libsecret libnotify  git  meson libnma
+              libgudev)
+#options=(debug)
+_commit=c6738f174cebd39d39494e26d42ff9a59cca9f1b  # tags/1.28.0^0
+source=("git+https://gitlab.gnome.org/GNOME/network-manager-applet.git#commit=$_commit")
+sha256sums=('SKIP')
+replaces=('network-manager-applet')
+provides=('network-manager-applet')
+conflicts=('network-manager-applet')
+
+pkgver() {
+  cd $pkgbase
+  git describe --tags | sed 's/-dev/dev/;s/[^-]*-g/r&/;s/-/+/g'
+}
+
+prepare() {
+  cd $pkgbase
+}
+
+build() {
+  arch-meson $pkgbase build -D selinux=false -D appindicator=no -D wwan=false
+  meson compile -C build
+}
+
+Xcheck() {
+  meson test -C build --print-errorlogs
+}
+
+_pick() {
+  local p="$1" f d; shift
+  for f; do
+    d="$srcdir/$p/${f#$pkgdir/}"
+    mkdir -p "$(dirname "$d")"
+    mv "$f" "$d"
+    rmdir -p --ignore-fail-on-non-empty "$(dirname "$f")"
+  done
+}
+
+package_network-manager-applet-light() {
+  depends=(nm-connection-editor-light  libnotify libsecret networkmanager-light)
+#           libappindicator-gtk3)
+
+  meson install -C build --destdir "$pkgdir"
+
+  cd "$pkgdir"
+  _pick nmce usr/bin/nm-connection-editor
+  _pick nmce usr/share/applications/nm-connection-editor.desktop
+  _pick nmce usr/share/icons/hicolor/*/*/nm-device-wwan{,-symbolic}.*
+  _pick nmce usr/share/locale
+  _pick nmce usr/share/man/man1/nm-connection-editor.1
+  _pick nmce usr/share/metainfo
+}
+
+package_nm-connection-editor-light() {
+  pkgdesc="NetworkManager GUI connection editor and widgets"
+  depends=(libnma)
+#  conflicts=('libnm-gtk<1.8.18-1')
+#  replaces=('libnm-gtk<1.8.18-1')
+replaces=('package_nm-connection-editor')
+provides=('package_nm-connection-editor')
+conflicts=('package_nm-connection-editor')
+
+  mv nmce/* "$pkgdir"
+}

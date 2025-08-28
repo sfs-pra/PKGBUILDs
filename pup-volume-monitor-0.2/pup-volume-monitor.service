@@ -1,0 +1,23 @@
+[Unit]
+Description=Pup volume monitor
+##ConditionFileIsExecutable=!/usr/lib/gvfs/gvfsd
+#ConditionPathExists=/usr/lib/gvfs/gvfsd
+
+[Service]
+#ExecStart=/etc/rc.d/pup-volume-monitor start
+ExecStart=/bin/bash -c "/usr/bin/pup-volume-monitor-admin -s ;sleep 1; chmod 777 /tmp/pup_volume_monitor_socket"
+#ExecStart=/etc/init.d/start-pup-volume-monitor start
+#Type=oneshot
+Type=forking
+#ExecStop=/etc/rc.d/pup-volume-monitor stop
+ExecStop=/bin/bash -c "/usr/bin/pup-volume-monitor-admin -S ;sleep 1; rm /tmp/pup_volume_monitor_socket"
+#ExecStop=/etc/init.d/start-pup-volume-monitor stop
+#ExecStop=/usr/local/bin/killall pup-volume-monitor
+#ExecStopPost=/bin/rm -f /var/run/laptop-mode-tools/enabled
+#StandardOutput=tty
+#StandardError=tty
+#StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target
+
