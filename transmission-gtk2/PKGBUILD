@@ -1,0 +1,48 @@
+# $Id$
+#sfs puppyrus.org
+
+_pkgname=transmission
+pkgname=transmission-gtk2
+pkgver=2.60
+pkgrel=3
+pkgdesc="Torrent client"
+conflicts=('transmission-gtk')
+replaces=('transmission-gtk')
+arch=('i686' 'x86_64' aarch64)
+url="http://www.transmissionbt.com/"
+license=('MIT')
+depends=(gtk2 curl libevent openssl-1.0)
+#makedepends=('intltool' 'pkgconfig')
+source=(https://github.com/transmission/transmission-releases/raw/master/transmission-2.60.tar.xz)
+md5sums=(SKIP)
+
+build() {
+  cd "$srcdir"/${_pkgname}-${pkgver}
+  export PKG_CONFIG_PATH="/usr/lib/openssl-1.0/pkgconfig"
+  export CFLAGS+=" -I/usr/include/openssl-1.0"
+  export CPPFLAGS+=" -I/usr/include/openssl-1.0"
+  rm -f m4/glib-gettext.m4
+  autoreconf -fi
+
+#  export CXXFLAGS+=" -std=gnu++98"
+#  export LUAC=/usr/bin/luac
+#  export LUA_LIBS="`pkg-config --libs lua`"
+#  export RCC=/usr/bin/rcc-qt4
+
+  ./configure --prefix=/usr \
+              --sysconfdir=/etc \
+    --enable-daemon=no \
+    --enable-cli=no \
+    --enable-lightweight \
+  $([ "`uname -m`" = "aarch64" ] && echo " --host=aarch64-unknown-linux-gnu  --build=aarch64-unknown-linux-gnu ")
+  make
+}
+
+package() {
+  cd "$srcdir"/${_pkgname}-${pkgver}
+#  make DESTDIR="$pkgdir" install
+  make -C gtk DESTDIR="$pkgdir" install
+  make -C po DESTDIR="$pkgdir" install
+  install -Dm644 COPYING "$pkgdir/usr/share/licenses/transmission-gtk/COPYING"
+
+}

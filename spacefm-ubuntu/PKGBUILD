@@ -1,0 +1,67 @@
+pkgname=spacefm-ubuntu
+_pkgname=spacefm
+pkgver=1.0.6
+pkgrel=9
+pkgdesc='Multi-panel tabbed file manager w\o ffmpegthumbnailer with wayland.patch'
+arch=(i686 x86_64)
+url="https://ignorantguru.github.io/spacefm/"
+license=(GPL3)
+#depends=(gtk3 startup-notification ffmpegthumbnailer)
+depends=(gtk3 startup-notification)
+conflicts=(spacefm spacefm-gtk2)
+provides=(spacefm)
+replaces=('spacefm')
+makedepends=(intltool)
+optdepends=('dbus: dbus integration'
+            'util-linux: disk eject support'
+            'lsof: device processes'
+            'wget: plugin download'
+            'gksu: perform as root functionality'
+            'udevil: mount as non-root user and mount networks'
+            'udisks2: mount as non-root user'
+            'pmount: mount as non-root user'
+            'curlftpfs: mount FTP shares'
+            'jmtpfs: mount MTP devices'
+            'gphotofs: mount cameras'
+            'ifuse: mount your iPhone/iPod Touch'
+            'fuseiso: mount ISO files')
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/IgnorantGuru/spacefm/archive/${pkgver}.tar.gz"
+	"http://archive.ubuntu.com/ubuntu/pool/universe/s/spacefm/spacefm_1.0.6-9.debian.tar.xz"
+	"https://github.com/puppylinux-woof-CE/woof-CE/raw/refs/heads/testing/woof-code/rootfs-petbuilds/spacefm/wayland.patch")
+#        "https://github.com/FabioLolix/AUR-artifacts/raw/master/spacefm-Fix-GCC-10-build.patch"
+#        "https://raw.githubusercontent.com/FabioLolix/AUR-artifacts/master/spacefm-glibc-2.28-compatibility.patch")
+sha256sums=('fedea9fcad776e0af4b8d90c5a1c86684a9c96ef1cdd4e959530ce93bdebe7c9'
+            'fedea9fcad776e0af4b8d90c5a1c86684a9c96ef1cdd4e959530ce93bdebe7c9'
+	    'fa1e6335bb4af25dc8fb9baf1c323d78518e05fef825841c02ea0add84703834')
+
+prepare() {
+    cp "$srcdir"/debian/patches/*.patch "$srcdir"
+    cd "$srcdir/${_pkgname}-${pkgver}"
+#  patch -Np1 -i ../spacefm-glibc-2.28-compatibility.patch
+#  patch -Np1 -i ../spacefm-Fix-GCC-10-build.patch
+#  patch -Np1 -i ../wayland.patch
+#        for src in "${source[@]}"; do
+        for src in `ls ../*patch` ; do
+            src="${src%%::*}"
+            src="${src##*/}"
+            [[ $src = *.patch ]] || continue
+        echo "Applying patch $src..."
+        patch -Np1 < "../$src"
+        done
+}
+
+build() {
+  CFLAGS+=" -Wno-error=incompatible-pointer-types"
+
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+  ./configure \
+    --prefix=/usr \
+    --with-gtk3 --disable-video-thumbnails
+  make
+}
+
+package() {
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+  make DESTDIR="${pkgdir}" install
+  rm -f "$pkgdir"/usr/bin/spacefm-installer
+}

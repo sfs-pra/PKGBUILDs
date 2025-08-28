@@ -1,0 +1,46 @@
+# $Id$
+# Maintainer: Felix Yan <felixonmars@archlinux.org>
+# Contributor: Alessio Sergi <asergi at archlinux dot us>
+
+pkgname=synapse-gtk2
+_pkgname=synapse
+pkgver=0.2.10
+pkgrel=2
+pkgdesc="A semantic file launcher"
+arch=('x86_64')
+url="https://launchpad.net/synapse-project"
+license=('GPL3')
+#depends=('libkeybinder3' 'hicolor-icon-theme' 'json-glib' 'libgee' 'libnotify' \
+#         'zeitgeist' 'rest' 'xdg-utils')
+depends=('gtkhotkey' 'hicolor-icon-theme' 'json-glib' 'libgee06' 'libnotify' \
+          'xdg-utils')
+makedepends=('intltool' 'vala0.26')
+optdepends=('banshee: banshee plugin'
+            'bc: calculator plugin'
+            'devhelp: documentation plugin'
+            'gnome-screensaver: screensaver plugin'
+            'gnome-dictionary: dictionary plugin'
+            'openssh: ssh plugin'
+            'pastebinit: pastebin plugin'
+            'rhythmbox: rhythmbox plugin'
+            'xnoise: xnoise plugin')
+#source=("https://launchpad.net/$pkgname-project/0.2/$pkgver/+download/$pkgname-$pkgver.tar.xz")
+source=("http://distrib-coffee.ipsl.jussieu.fr/pub/linux/Mageia/distrib/5/SRPMS/core/release/synapse-0.2.10-6.mga5.src.rpm")
+source=synapse-0.2.10.tar.gz
+sha1sums=('SKIP')
+
+build() {
+  cd "$srcdir/$_pkgname-$pkgver"
+
+  ./configure --prefix=/usr \
+    --enable-zeitgeist=no
+  make
+}
+
+package() {
+  cd "$srcdir/$_pkgname-$pkgver"
+
+  make DESTDIR="$pkgdir/" install
+}
+
+# vim:set ts=2 sw=2 et:

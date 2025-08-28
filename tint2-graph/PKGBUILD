@@ -1,0 +1,52 @@
+pkgname=tint2-graph
+pkgbase=tint2
+_pkgname=tint2
+#pkgver=16.7
+pkgver=17.0.2
+pkgrel=3
+pkgdesc='Basic, good-looking task manager for WMs with CPU MEM NET graph patch'
+arch=(x86_64)
+url='https://gitlab.com/o9000/tint2'
+license=(GPL2)
+depends=(gtk3 imlib2 startup-notification)
+makedepends=(cmake git)
+# ninja setconf startup-notification)
+#source=("git+https://gitlab.com/o9000/tint2.git#tag=$pkgver" 
+source=("git+$url#commit=f8f9c18cef88239688c62fdba70db9b082e1f0f4" # tag: v17.0.2
+#    '32ua.patch::https://gitlab.com/o9000/tint2/merge_requests/32.diff'
+    '34graph.patch::https://gitlab.com/o9000/tint2/merge_requests/34.diff' 
+    'graph.tint2rc'
+    )
+sha256sums=('SKIP' 'SKIP' 'SKIP' 
+    #'SKIP'
+    )
+
+prepare() {
+#  setconf $_pkgname/get_version.sh VERSION="$pkgver"
+   $_pkgname/get_version.sh VERSION="$pkgver"
+  cd "$srcdir/$_pkgname"
+#  patch -Np1 -i "$srcdir/graph.patch"
+#    for _patch in ${srcdir}/*.patch; do
+#      patch -Np1 -i ${_patch}
+#    done
+}
+
+build() {
+  mkdir -p build
+  cd build
+  cmake ../$_pkgname \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DENABLE_TINT2CONF=1 \
+#    -GNinja
+#  ninja
+    make
+}
+
+package() {
+#  DESTDIR="$pkgdir" ninja -C build install
+  DESTDIR="$pkgdir" make -C build install
+  install -Dm644 "$srcdir/graph.tint2rc" "$pkgdir/usr/share/tint2/graph.tint2rc"
+}
+
+# getver: gitlab.com/o9000/tint2/raw/master/README.md
+# vim: ts=2 sw=2 et:

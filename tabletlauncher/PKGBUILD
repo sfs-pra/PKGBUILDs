@@ -1,0 +1,51 @@
+# Maintainer: Raymond Wagenmaker <raymondwagenmaker@gmail.com>
+_pkgname=tabletlauncher
+pkgname=$_pkgname-rastersoft
+pkgver=0.7
+pkgrel=3
+pkgdesc="An gtk3 application launcher for small devices. Specifically designed to be used with tabletwm"
+arch=(i686 x86_64)
+url="https://github.com/rastersoft/terminus"
+license=('GPL')
+#depends=(libgee  libkeybinder3  vte3)
+#makedepends=('cmake') # 'python-docutils')
+#optdepends=('bash-completion: for bash completion')
+depends=( 'atk' 'glib2' 'cairo' 'gtk3' 'pango' 'gdk-pixbuf2' 'libgee06' )
+#'libkeybinder3' 'vte3' 'zlib' 'gnutls' 'libx11' )
+makedepends=( 'vala' 'glibc' 'atk' 'cairo' 'gtk3' 'gdk-pixbuf2' 'libgee06' 'glib2' )
+#'libkeybinder3' 'pango' 'vte3' 'libx11' 'cmake' 'gettext' 'pkg-config' 'gcc' 'make' 'intltool' )
+source=("https://github.com/rastersoft/tabletlauncher/archive/v0.7.tar.gz")
+md5sums=('SKIP')
+
+build() {
+  cd "$srcdir/$_pkgname-$pkgver"
+  mkdir -p install
+  cd "$srcdir/$_pkgname-$pkgver/install"
+#  cd install
+  #cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+#  cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+	cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=/usr/lib
+  make
+}
+
+package() {
+  cd "$srcdir/$_pkgname-$pkgver/install"
+  #make install
+  make DESTDIR="$pkgdir" install
+  #install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
+# vim:set ts=2 sw=2 et:
+
+Xbuild() {
+	rm -rf ${startdir}/install
+	mkdir ${startdir}/install
+	cd ${startdir}/install
+	cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=/usr/lib
+	make 
+}
+
+Xpackage() {
+	cd ${startdir}/install
+	make DESTDIR="$pkgdir/" install
+}

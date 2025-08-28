@@ -1,0 +1,38 @@
+# Contributor: sickhate <sickhate@tux-linux.net>
+# Maintainer: Stefan Husmann <stefan-husmann@t-online.de>
+
+pkgver=1.5
+pkgname=simdock$pkgver
+pkgrel=2
+pkgdesc="Fast and customizable dockbar."
+arch=('i686' 'x86_64')
+url="https://github.com/onli/simdock"
+license=('GPL')
+depends=('wxgtk' 'wxsvg' 'libwnck' 'gconf')
+provides=('simdock')
+conflicts=('simdock')
+install=simdock.install
+source=("https://github.com/onli/simdock/archive/$pkgver.tar.gz")
+_repo=simdock
+md5sums=('SKIP')
+
+XXpkgver() {
+  cd "$srcdir/${_repo}"
+  printf "%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+  cd "$srcdir/${_repo}-$pkgver"
+#  sed -i 's+wx-config+wx-config-2.8+' Makefile
+}
+
+build() {
+  cd "$srcdir/${_repo}-$pkgver"
+  make 
+}
+
+package() {
+  cd "$srcdir/${_repo}-$pkgver"
+  make DESTDIR="$pkgdir" install
+  rm -rf $pkgdir/usr/local
+}

@@ -1,0 +1,33 @@
+# Contributor: sfs <sfslinux@gmail.com>
+pkgname=ssh-gui
+pkgver=0.7.1
+pkgrel=2
+pkgdesc="ssh-gui"
+arch=(i686 x86_64 aarch64)
+url="https://sourceforge.net/projects/ssh-gui/files/ssh-gui/0.7.1/ssh-gui-0.7.1.tar.gz"
+license=('GPL')
+groups=(ftp)
+depends=('gtk2')
+install=
+#source=(https://download.pureftpd.org/pub/pure-ftpd/releases/obsolete/$pkgname-$pkgver.tar.bz2)
+source=(https://sourceforge.net/projects/ssh-gui/files/$pkgname/$pkgver/$pkgname-$pkgver.tar.gz)
+noextract=()
+md5sums=('SKIP')
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+ls
+#  ./configure --prefix=/usr  --sbindir=/usr/bin \
+#  $([ "`uname -m`" = "aarch64" ] && echo " --host=aarch64-unknown-linux-gnu  --build=aarch64-unknown-linux-gnu ")
+  make || return 1
+
+}
+
+package() {
+  cd $pkgname-$pkgver
+  #make DESTDIR="$pkgdir" install
+  install -Dm755 $pkgname "$pkgdir/usr/bin/$pkgname"
+}
+
+
+# vim:set ts=2 sw=2 et:
