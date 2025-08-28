@@ -1,0 +1,42 @@
+# Maintainer: redtide <redtid3@gmail.com>
+
+_pkgname=labwc-tweaks-gtk
+pkgname=$_pkgname-git
+pkgver=r97.2613cd8
+pkgrel=1
+pkgdesc="Simple configuration GUI application for labwc"
+url="https://github.com/labwc/labwc-tweaks-gtk"
+license=(GPL2)
+arch=(x86_64)
+depends=(
+  glib2
+  libxml2
+  gtk3
+)
+makedepends=(
+  meson
+  git
+)
+source=(
+  "$_pkgname::git+$url.git"
+)
+sha512sums=('SKIP')
+
+pkgver() {
+  cd $_pkgname
+  (
+    set -o pipefail
+    git describe --long --tags 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  )
+}
+
+build() {
+#  arch-meson -Dman-pages=enabled "$pkgname-$pkgver" build
+  arch-meson  "$_pkgname" build
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+}

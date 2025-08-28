@@ -1,0 +1,80 @@
+# Maintainer:  Vincent Grande <shoober420@gmail.com>
+# Contributor: Chocobo1 <chocobo1 AT archlinux DOT net>
+
+_pkgname=libsndfile
+pkgname=libsndfile-minimal
+pkgver=1.0.31
+#.r102.g494a6d63
+pkgrel=1
+pkgdesc="C library for reading and writing files containing sampled sound"
+arch=('i686' 'x86_64')
+url="http://www.mega-nerd.com/libsndfile/"
+license=('LGPL')
+depends=('glibc' 'alsa-lib')
+optdepends=('flac: flac support'
+	    'libogg: ogg support'
+	    'libvorbis: vorbis support')
+#makedepends=('git' 'autogen')
+provides=('libsndfile.so')
+conflicts=('libsndfile')
+options=('staticlibs')
+#source=("git+https://github.com/erikd/libsndfile.git")
+source=("https://github.com/${_pkgname}/${_pkgname}/releases/download/${pkgver}/${_pkgname}-${pkgver}.tar.bz2")
+sha256sums=('SKIP')
+
+
+Xpkgver() {
+#  cd "libsndfile"
+  cd "$_pkgname-$pkgver"
+
+  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cd "$_pkgname-$pkgver"
+
+#  ./autogen.sh
+  ./configure --prefix="/usr" --disable-sqlite --disable-bow-docs --disable-full-suite
+  make
+}
+
+Xbuild() {
+  cd "$pkgname-$pkgver"
+  # tests can only be built with static libs
+  cmake -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE='None' \
+        -Wno-dev \
+        -B build-test \
+        -S .
+  make VERBOSE=1 -C build-test
+
+  cmake -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_BUILD_TYPE='None' \
+        -DBUILD_SHARED_LIBS=ON \
+        -Wno-dev \
+        -B build \
+        -S .
+  make VERBOSE=1 -C build
+}
+
+
+#check() {
+#  cd "libsndfile"
+
+#  make check
+#}
+
+package() {
+#  cd "libsndfile"
+  cd "libsndfile-$pkgver"
+
+  make DESTDIR="$pkgdir" install
+}
+
+Xpackage() {
+  depends+=('libFLAC.so' 'libogg.so' 'libvorbis.so' 'libvorbisenc.so')
+  cd "$pkgname-$pkgver"
+  make DESTDIR="$pkgdir" install -C build
+  install -vDm 644 {AUTHORS,ChangeLog,NEWS,README} \
+    -t "${pkgdir}/usr/share/doc/${pkgname}"
+}

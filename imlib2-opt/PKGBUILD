@@ -1,0 +1,59 @@
+# $Id$
+# Maintainer: Ronald van Haren <ronald.archlinux.org>
+# Contributor: Arjan Timmerman <arjan.archlinux.org>
+# Contributor: Tom Newsom <Jeepster.gmx.co.uk>
+
+pkgname=imlib2-opt
+_pkgname=imlib2
+pkgver=1.4.9
+pkgrel=4
+pkgdesc="Library that does image file loading and saving as well as rendering, manipulation, arbitrary polygon support"
+url="http://sourceforge.net/projects/enlightenment/"
+arch=('i686' 'x86_64')
+license=('BSD')
+conflicts=(alsa-util)
+provides=(imlib2)
+#depends=('libtiff' 'giflib' 'bzip2' 'freetype2' 'libxext' 'libpng' 'libid3tag' 'libjpeg-turbo')
+depends=( 'freetype2' 'libxext' 'libpng' )
+source=(http://downloads.sourceforge.net/enlightenment/$pkgname-$pkgver.tar.bz2)
+sha1sums=('SKIP')
+
+prepare() {
+  cd "${_pkgname}-${pkgver}"
+  sed -i 's/@my_libs@//' imlib2-config.in
+}
+
+build() {
+  cd "${_pkgname}-${pkgver}"
+
+  [ $CARCH = "i686" ] && EXTRAOPTS="--enable-mmx"
+  [ $CARCH = "x86_64" ] && EXTRAOPTS="--enable-amd64"
+
+#  ./configure --prefix=/usr \
+  ./configure --prefix=/opt/imlib2 \
+              --sysconfdir=/etc/imlib2-opt \
+              --x-libraries=/usr/lib/imlib2-opt $EXTRAOPTS \
+                --without-jpeg \
+                --without-tiff \
+                --without-gif \
+                --without-zlib \
+                --without-bzip2 \
+
+#--libdir=/usr/lib/imlib2-lt \
+
+#  --without-png           Disable PNG image loader
+#  --without-tiff          Disable TIFF image loader
+#  --without-gif           Disable GIF image loader
+#  --without-zlib          Disable ZLIB loader
+#  --without-bzip2         Disable BZIP2 loader
+#  --without-id3   
+  make
+}
+
+package() {
+  cd "${_pkgname}-${pkgver}"
+  make DESTDIR="${pkgdir}" install
+
+  # Install License
+#  install -Dm644 COPYING "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+}

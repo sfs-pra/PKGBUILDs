@@ -1,0 +1,44 @@
+# $Id$
+# Maintainer: sfs <sfslinux@gmail.com>
+# Contributor: Steven Honeyman 
+
+pkgname=l3afpad
+pkgver=0.8.18.1.11.r20.g5235c9e
+pkgrel=2
+pkgdesc="A notepad clone for GTK+-3.x.x"
+arch=('x86_64')
+url="https://github.com/stevenhoneyman/l3afpad"
+license=('GPL')
+depends=('gtk3')
+#makedepends=('intltool')
+#source=("https://download.savannah.gnu.org/releases/${pkgname}/${pkgname}-${pkgver}.tar.gz"
+#        '0001-truncate.patch')
+#sha256sums=('959d22ae07f22803bc66ff40d373a854532a6e4732680bf8a96a3fbcb9f80a2c'
+#            '9d9073ec4684e77cd1a6dd0cec4351750f9f61f2a6bab0e97f06ae6d00b7d2c4')
+source=('git+'${url}'')
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "${srcdir}/${pkgname}" #-${pkgver}"
+  git describe --long --tags | sed -r 's/^v//;s/([^-]*-g)/r\1/;s/-/./g'
+}
+
+prepare() {
+  cd "${srcdir}/${pkgname}" #-${pkgver}"
+
+#  patch -Np1 < "${srcdir}/"0001-truncate.patch
+}
+
+build() {
+  cd "${srcdir}/${pkgname}" #-${pkgver}"
+    ./autogen.sh 
+  ./configure --prefix=/usr #--enable-chooser
+  make
+}
+
+package() {
+  cd "${srcdir}/${pkgname}" #-${pkgver}"
+
+  make DESTDIR="${pkgdir}" install
+#  echo 'StartupNotify=true' >> "${pkgdir}/usr/share/applications/leafpad.desktop"
+}

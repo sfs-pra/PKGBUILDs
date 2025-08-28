@@ -1,0 +1,63 @@
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererAML.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererAML.cpp
+index d8674c8..8f1a1a0 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererAML.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererAML.cpp
+@@ -31,6 +31,7 @@
+ #include "settings/MediaSettings.h"
+ #include "windowing/WindowingFactory.h"
+ #include "cores/VideoPlayer/VideoRenderers/RenderCapture.h"
++#include "settings/AdvancedSettings.h"
+
+ CRendererAML::CRendererAML()
+ {
+@@ -122,19 +123,46 @@ bool CRendererAML::RenderUpdateVideoHook(bool clear, DWORD flags, DWORD alpha)
+   ManageRenderArea();
+
+   CDVDAmlogicInfo *amli = static_cast<CDVDAmlogicInfo *>(m_buffers[m_iYV12RenderBuffer].hwDec);
++
+   if (amli && amli->GetOmxPts() != m_prevPts)
+   {
+     m_prevPts = amli->GetOmxPts();
+-    SysfsUtils::SetInt("/sys/module/amvideo/parameters/omx_pts", amli->GetOmxPts());
++    int duration = amli->GetAmlDuration();
++
++    long pts;
++    int fd = open("/sys/class/tsync/pts_pcrscr", O_RDONLY);
++    if (fd >= 0)
++    {
++      char pts_str[64];
++      int size = read(fd, pts_str, sizeof(pts_str));
++      close(fd);
++      if( size > 0 )
++      {
++        pts = strtol(pts_str, NULL, 16);
++        if (pts < m_prevPts || pts > m_prevPts + 2*duration)
++        {
++          CLog::Log(LOGDEBUG, "RenderUpdateVideoHook: Adjusting: omx:%u ptssrc:%u", static_cast<unsigned int>(m_prevPts), static_cast<unsigned int>(pts));
++          fd = open("/sys/class/tsync/pts_pcrscr", O_WRONLY);
++          if (fd)
++          {
++            sprintf(pts_str, "0x%x", m_prevPts + duration);
++            write(fd, pts_str, strlen(pts_str));
++            close(fd);
++          }
++        }
++      }
++    }
++
++    if (g_advancedSettings.CanLogComponent(LOGVIDEO))
++      CLog::Log(LOGDEBUG, "RenderUpdateVideoHook: pts:%0.6f", CAMLCodec::OMXPtsToSeconds(m_prevPts));
++
++    SysfsUtils::SetInt("/sys/module/amvideo/parameters/omx_pts", m_prevPts);
+
+     CAMLCodec *amlcodec = amli->getAmlCodec();
+     if (amlcodec)
+       amlcodec->SetVideoRect(m_sourceRect, m_destRect);
+   }
+-
+   usleep(10000);
+-
+-  return true;
+ }
+
+ #endif

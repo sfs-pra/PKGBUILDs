@@ -1,0 +1,37 @@
+_pkgname=labwc
+pkgname=labwc-osd-thumbnail
+pkgver=0.8.1
+pkgrel=1
+pkgdesc='stacking wayland compositor with look and feel from openbox (git version)'
+#pkgdesc='stacking wayland compositor with look and feel from openbox (git version) w\o wlr_xdg_foreign'
+url="https://github.com/labwc/labwc/discussions/2172"
+#"https://github.com/labwc/labwc"
+arch=('x86_64')
+license=('GPL-2.0-only')
+#depends=('libpng' 'librsvg' 'libsfdo' 'pango' 'seatd' 'ttf-font' 'libwlroots-0.18.so' 'wayland' 'xorg-xwayland')
+depends=('libpng' 'librsvg' 'libsfdo' 'pango' 'seatd' 'ttf-font' 'wlroots>=0.18.1' 'wayland' 'xorg-xwayland')
+#makedepends=('git' 'meson' 'scdoc' 'wayland-protocols')
+makedepends=('meson' 'scdoc' 'wayland-protocols')
+optdepends=("bemenu: default launcher via Alt+F3")
+conflicts=(labwc labwc-git)
+provides=(labwc)
+#source=("git+https://github.com/labwc/${_pkgname}.git")
+source=("https://github.com/tokyo4j/labwc/archive/refs/heads/osd-thumbnail.zip")
+md5sums=('0e4fff32794416a50a6319584bde3ad4')
+
+
+Xpkgver() {
+  cd "$_pkgname"
+  git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+#  arch-meson -Dman-pages=enabled "$_pkgname" build
+  arch-meson -Dman-pages=enabled "$pkgname" build
+#  arch-meson -Dman-pages=disabled -Dxwayland=disabled "$_pkgname" build
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+}

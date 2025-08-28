@@ -1,0 +1,23 @@
+style "launcher-bg" { # for the background GtkWindow
+    bg[NORMAL] = "#000000"
+}
+style "launcher-fg" { # for the text size/color
+    font_name="Sans Bold 12"
+    fg[NORMAL]="#AAA9A7"
+#    fg[NORMAL]="#ffffff"
+    fg[PRELIGHT]="#000000"
+}
+style "launcher-nb" = "launcher-fg" { #for the notebook
+#    bg[NORMAL] = "#358ae4"
+    bg[NORMAL] = "#000000"
+    #"bg[SELECTED] = "#000000"
+#    fg[ACTIVE] = "#ffffff" #text color for non-active tabs
+#    fg[ACTIVE] = "#358ae4" #text color for non-active tabs
+    fg[ACTIVE] = "#ffffff" #text color for non-active tabs
+    bg[ACTIVE] = "#000000" #the other non-active tabs
+}
+widget_class "*<GtkNotebook>" style "launcher-nb"
+widget_class "*<GtkNotebook><GtkHBox><GtkLabel>" style "launcher-nb"
+widget "GtkWindow" style "launcher-bg"
+widget_class "*<ExoWrapTable><GtkButton>*<GtkLabel>" style "launcher-fg"
+widget_class "*<GtkVBox><GtkHBox><GtkLabel>" style "launcher-fg"

@@ -1,0 +1,34 @@
+pkgname=lxpanel-gtk3
+_pkgname=lxpanel
+pkgver=0.10.2.r1
+pkgrel=1
+pkgdesc='Lightweight X11 desktop panel for LXDE (GTK+ 3 version)'
+arch=('x86_64')
+license=('GPL2')
+url='https://lxde.org/'
+groups=('lxde-gtk3')
+depends=('alsa-lib' 'curl' 'menu-cache' 'lxmenu-data' 'libfm-gtk3' 'libkeybinder3' 'libwnck3')
+#makedepends=('intltool' 'docbook-xml' 'docbook-xsl' 'wireless_tools')
+makedepends=('intltool'  'wireless_tools')
+optdepends=('wireless_tools: netstat plugin')
+conflicts=($_pkgname)
+source=(https://github.com/lxde-continued/lxpanel/releases/download/lxpanel-$pkgver/lxpanel-$pkgver.tar.bz2)
+sha256sums=('9c649b83af1ba46ebcdb4d9144914e53cf4b2abb863620750879707202e62c74')
+
+build() {
+  cd $_pkgname-$pkgver
+  ./configure \
+    --sysconfdir=/etc \
+    --prefix=/usr \
+    --enable-gtk3
+
+  #https://bugzilla.gnome.org/show_bug.cgi?id=656231
+  sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+
+  make
+}
+
+package() {
+  cd $_pkgname-$pkgver
+  make DESTDIR="$pkgdir" install
+}

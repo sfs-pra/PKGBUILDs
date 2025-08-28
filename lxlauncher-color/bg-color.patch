@@ -1,0 +1,11 @@
+--- lxlauncher.c.0	2018-01-13 16:29:22.454824902 +0300
++++ lxlauncher-0.2.5/src/lxlauncher.c	2018-01-13 17:10:07.665882479 +0300
+@@ -346,7 +346,7 @@
+         }
+         else
+         {
+-            cairo_set_source_rgb(cr, 184.0/256, 215.0/256, 235.0/256);
++            cairo_set_source_rgb(cr, 36.0/256, 36.0/256, 36.0/256);
+             cairo_fill(cr);
+         }
+         cairo_destroy(cr);

@@ -1,0 +1,13 @@
+[100%] Linking CXX executable kodi.bin
+build/windowing/windowing.a(WinEventsX11.cpp.o): In function `CWinEventsX11Imp::MessagePump()':
+WinEventsX11.cpp:(.text+0xb4c): undefined reference to `XRRUpdateConfiguration'
+build/windowing/windowing.a(WinEventsX11.cpp.o): In function `CWinEventsX11Imp::Init(_XDisplay*, unsigned long)':
+WinEventsX11.cpp:(.text+0x17d0): undefined reference to `XRRQueryExtension'
+WinEventsX11.cpp:(.text+0x1818): undefined reference to `XRRSelectInput'
+collect2: ошибка: выполнение ld завершилось с кодом возврата 1
+make[2]: *** [CMakeFiles/kodi.dir/build.make:429: kodi.bin] Ошибка 1
+make[1]: *** [CMakeFiles/Makefile2:201: CMakeFiles/kodi.dir/all] Ошибка 2
+make: *** [Makefile:139: all] Ошибка 2
+==> ОШИБКА: Произошел сбой в build().
+    Прерывание...
+[root@alarm kodi17-1]# 

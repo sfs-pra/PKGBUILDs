@@ -1,0 +1,14 @@
+diff --git a/src/preview.c b/src/preview.c
+index ada6eb3..eb51629 100644
+--- a/src/preview.c
++++ b/src/preview.c
+@@ -815,6 +815,9 @@ GdkPixbuf *preview_theme(const gchar *name, const gchar *titlelayout,
+                          RrFont *osd_active_font,
+                          RrFont *osd_inactive_font)
+ {
++#if GTK_CHECK_VERSION(3, 0, 0)
++    return NULL; // avoid GTK3/cairo segfault (ticket #933)
++#endif
+ 
+     GdkPixbuf *preview;
+     GdkPixbuf *menu;

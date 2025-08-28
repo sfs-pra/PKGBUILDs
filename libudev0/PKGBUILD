@@ -1,0 +1,37 @@
+# Maintainer: jdarch <jda -dot- cloud -plus- archlinux -at- gmail -dot- com>
+
+pkgname=('libudev0')
+pkgver=174
+pkgrel=1
+pkgdesc="Dynamic library to access udev device information, legacy libudev.so.0."
+url="https://www.kernel.org/pub/linux/utils/kernel/hotplug/udev/udev.html"
+arch=('x86_64' 'i686')
+license=('GPL')
+makedepends=('gperf')
+source=("https://www.kernel.org/pub/linux/utils/kernel/hotplug/udev-174.tar.xz")
+md5sums=('SKIP')
+#sha512sums=('2420ff16a596ca4dc2ad6c9e0142fcd62e49102cbe1a1cbef8599ea04f3cfe0f26df7f548a9734fd6e5dc5aa126846793acea7dfcf3021604f4e40a47b1f8aa9')
+
+prepare() {
+   cd "${srcdir}/udev-${pkgver}"
+   autoreconf -vfi
+}
+
+build() {
+  cd "${srcdir}/udev-${pkgver}"
+  ./configure \
+    --disable-introspection \
+    --sysconfdir=/etc \
+    --bindir=/usr/bin \
+    --sbindir=/usr/bin \
+    --libdir=/usr/lib \
+    --libexecdir=/usr/lib/udev
+  make LIBS="-lrt"
+#    --disable-gudev \
+}
+
+package() {
+  cd "${srcdir}/udev-${pkgver}"
+#  cd $_pkgname-$pkgver
+  make DESTDIR="$pkgdir" install
+}
