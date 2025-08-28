@@ -1,0 +1,75 @@
+# Contributor: Jan de Groot <jgc@archlinux.org>
+# Original Maintainer: megadriver <megadriver at gmx dot com>
+# Based on gtk3 from [extra]
+# Based on gtk3-ubuntu package from Luigi Ranghetti <ggranga@gmail.com>
+# Old AUR Package Maintainer: 3V0LU710N <db_eee at yahoo dot com>
+# Current AUR Package Maintainer: feuri <mail at feuri dot de>
+
+
+pkgname=gtk3-light
+#pkgver=3.14.6
+pkgver=3.22.10
+pkgrel=1
+pkgdesc="GTK3 without colord."
+arch=('i686' 'x86_64' aarch64)
+url="http://www.gtk.org/"
+install=gtk3.install
+#depends=('atk' 'cairo' 'gtk-update-icon-cache' 'libcups' 'libxcursor' 'libxinerama' 'libxrandr' 'libxi' 'libxcomposite' 'libxdamage' 'libxkbcommon' 'pango' 'shared-mime-info' 'at-spi2-atk' 'wayland')
+#depends=('atk' 'cairo' 'gtk-update-icon-cache'  'libxcursor' 'libxinerama' 'libxrandr' 'libxi' 'libxcomposite' 'libxdamage' 'libxkbcommon' 'pango' 'shared-mime-info' 'at-spi2-atk' )
+depends=(atk at-spi2-atk cairo gtk-update-icon-cache libxcursor libxinerama libxrandr libxi)
+#depends=('libxrandr' 'pango' 'libxdamage' 'dconf' 'libxinerama' 'libxcomposite' 'atk' 'libxcursor' 'gdk-pixbuf2' 'libxi' 'cairo-small')
+#makedepends=('gobject-introspection')
+replaces=('gtk3')
+provides=("gtk3=$pkgver")
+conflicts=('gtk3')
+options=('!libtool' '!docs') # Remove '!docs' if you want gtk3 docs
+backup=(etc/gtk-3.0/settings.ini)
+license=('LGPL')
+source=(http://ftp.gnome.org/pub/gnome/sources/gtk+/${pkgver%.*}/gtk+-$pkgver.tar.xz)
+#        settings.ini)
+sha256sums=('SKIP') 
+# 'SKIP')
+#sha256sums=('dbda37986f934f986c0bb20f2b0c59f2717a2e5c098370ad69677ff89295f1a1'
+#            'c214d3dcdcadda3d642112287524ab3e526ad592b70895c9f3e3733c23701621')
+
+build() {
+    cd "$srcdir/gtk+-$pkgver"
+
+    CXX=/bin/false ./configure --prefix=/usr \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+    --localstatedir=/var \
+    --enable-x11-backend \
+    --disable-schemas-compile \
+    --disable-introspection \
+    --disable-packagekit \
+    --disable-colord \
+    --disable-gtk-doc \
+    --disable-man \
+    --disable-wayland-backend \
+    --disable-debug \
+    --disable-static \
+    --disable-cups \
+	--disable-papi			\
+	--disable-win32-backend		\
+	--disable-quartz-backend	\
+#	--enable-gtk2-dependency	\
+#	--disable-modules		\
+#	--disable-Bsymbolic		\
+#	--disable-xinerama		\
+
+#    --disable-gtk2-dependency \
+
+
+
+    #https://bugzilla.gnome.org/show_bug.cgi?id=655517
+    sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+    make
+}
+
+package() {
+    cd "$srcdir/gtk+-$pkgver"
+    make DESTDIR="$pkgdir" install
+
+    #install -Dm644 "$srcdir/settings.ini" "$pkgdir/etc/gtk-3.0/settings.ini"
+}

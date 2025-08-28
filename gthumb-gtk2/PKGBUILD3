@@ -1,0 +1,55 @@
+# Contributor: Dongsheng Cai <imdongsheng@gmail.com>
+# Maintainer: Adria Arrufat (swiftscythe) <swiftscythe@gmail.com>
+
+_pkgname=gthumb
+pkgname=gthumb-gtk2
+#pkgver=2.90.3
+pkgver=2.14.3
+pkgrel=3
+pkgdesc="Image browser and viewer for the GNOME Desktop"
+arch=(i686 x86_64 aarch64)
+url="http://live.gnome.org/gthumb/"
+license=('GPL')
+provides=($_pkgname=$pkgver)
+conflicts=($_pkgname)
+#depends=(desktop-file-utils hicolor-icon-theme gconf-nopolkit librsvg)
+depends=(desktop-file-utils hicolor-icon-theme gconf-nopolkit librsvg libwebp exiv2)
+# clutter-gtk
+#         gst-plugins-base-libs gsettings-desktop-schemas 
+#         webkit2gtk)
+#makedepends=(intltool libchamplain libraw exiv2 itstool brasero librsvg
+#             libraw liboauth docbook-xsl gnome-common2 yelp-tools)
+#makedepends=( libchamplain  exiv2 itstool  librsvg
+makedepends=(  gnome-common2 yelp-tools)
+optdepends=('libraw: read RAW files'
+            'exiv2: metadata support'
+            'libchamplain: map viewer'
+            'brasero: burn discs'
+            'liboauth: web albums')
+options=('!emptydirs')
+install=gthumb.install
+#source=($_pkgname::git+https://git.gnome.org/browse/$_pkgname)
+source=(https://git.gnome.org/browse/gthumb/snapshot/$_pkgname-$pkgver.tar.xz)
+md5sums=('SKIP')
+
+#pkgver() {
+#	cd $_pkgname-${pkgver}/
+#	git describe | sed 's/^v//;s/-/./g'
+#}
+
+build() {
+	cd $_pkgname-${pkgver}/
+	./autogen.sh --prefix=/usr --sysconfdir=/etc \
+		--localstatedir=/var --disable-static \
+--disable-gnome-3 --disable-gstreamer --disable-libbrasero \
+		--enable-libchamplain   $([ "`uname -m`" = "aarch64" ] && echo " --host=aarch64-unknown-linux-gnu  --build=aarch64-unknown-linux-gnu ")
+#--enable-libraw
+	make
+}
+
+package() {
+    cd $_pkgname-${pkgver}/
+    make DESTDIR="$pkgdir" install
+#    install -D -m644 $srcdir/gthumb/data/icons/hicolor/48x48/apps/gthumb.png $pkgdir/usr/share/pixmaps/gthumb.png
+    rm -R $pkgdir/usr/share/gnome
+}

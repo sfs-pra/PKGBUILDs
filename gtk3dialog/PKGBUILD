@@ -1,0 +1,42 @@
+# Maintainer: sfslinux@gmail.com
+
+pkgname=gtk3dialog
+pkgver=0.1.2
+pkgrel=1
+pkgdesc="A small utility for fast and easy GUI building"
+arch=('x86_64')
+url="https://github.com/01micko/gtk3dialog"
+license=('GPL2')
+depends=('gtk3' )
+makedepends=('meson')
+source=(git+$url)
+sha256sums=('SKIP')
+#install=$pkgname.install
+
+pkgver() {
+  cd $pkgname
+#  git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+#  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+#  git describe --tags | sed 's/^v//;s/-/+/g'
+  git describe --tags | awk -F- '{print $2}'
+#awk -F"'" '/  version: / {print $2}' meson.build |head -1
+}
+
+Xprepare() {
+  cd $pkgname
+  sed -i 's/meson.add_install_script*/#meson.add_install_script*/' data/meson.build
+}
+
+build() {
+  cd $pkgname
+  meson build --prefix /usr #--strip
+#  ninja -C build
+#meson setup build #[configure-options]
+meson compile -C build
+}
+
+package() {
+  cd $pkgname
+#  DESTDIR="$pkgdir" meson install -C build
+    DESTDIR="$pkgdir" ninja -C build install
+}

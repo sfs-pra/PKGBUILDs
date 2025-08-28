@@ -1,0 +1,48 @@
+# Maintainer: nierro <nierro92 at gmail dot com>
+
+pkgname=gvfs-minimal
+_pkgname=gvfs
+pkgver=1.34.0
+pkgrel=1
+pkgdesc="A minimal build of gvfs with most backends disabled"
+url="http://www.gnome.org"
+arch=('i686' 'x86_64')
+license=('LGPL')
+depends=('udisks2')
+#makedepends=('intltool' 'dbus-glib' 'docbook-xsl')
+makedepends=('intltool' 'dbus-glib' )
+conflicts=('gvfs')
+provides=('gvfs')
+install=gvfs-minimal.install
+source=("http://ftp.gnome.org/pub/gnome/sources/$_pkgname/${pkgver%.*}/$_pkgname-$pkgver.tar.xz")
+md5sums=('SKIP')
+options=(!libtool)
+
+build() {
+  cd $srcdir/$_pkgname-$pkgver
+  
+  ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var --disable-static \
+  --disable-afc --disable-afp --disable-avahi --disable-bluray \
+   --disable-gdu --disable-gphoto2 --disable-hal \
+   --disable-keyring --disable-obexftp --disable-samba \
+  --disable-cdda --disable-goa --disable-libmtp --disable-archive \
+  --libexecdir=/usr/lib/gvfs --with-bash-completion-dir=/etc/bash_completion.d \
+  --disable-gcr \
+--enable-documentation=no
+#--disable-fuse --disable-http
+  make
+}
+
+package() {
+  cd $srcdir/$_pkgname-$pkgver
+  sed -e 's/^am__append_4/#am__append_4/' \
+	  -e 's/^am__append_5/#am__append_5/' \
+	  -i monitor/Makefile
+  make DESTDIR=$pkgdir install
+
+  # Disable network automount
+  sed -i 's/AutoMount=true/AutoMount=false/' $pkgdir/usr/share/gvfs/mounts/network.mount
+
+  # Remove useless GConf dir
+  rm -rf $pkgdir/usr/share/GConf
+}

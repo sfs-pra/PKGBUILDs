@@ -1,0 +1,107 @@
+# Maintainer: DrZaius <lou[at]fakeoutdoorsman.com>
+
+pkgname=ffmpeg-git-slitaz
+pkgver=r62591.451c787
+pkgrel=1
+pkgdesc="Universal multimedia toolkit"
+arch=('i686' 'x86_64')
+license=('GPL')
+url="http://ffmpeg.org/"
+license=('GPL')
+#depends=('alsa-lib' 'bzip2' 'freetype2' 'lame' 'libass' 'libfdk-aac-git' 'libtheora' 'libva' 'libvdpau' 'libvorbis' 'libvpx-git' 'opus' 'sdl' 'texi2html' 'x264-git' 'x265-hg' 'zlib')
+#depends=('alsa-lib' 'bzip2' 'freetype2'  'zlib')
+#depends=('alsa-lib' 'bzip2'  'lame' 'libass' 'libtheora' 'libvorbis' 'x264' 'zlib' 'libvpx' 'xvidcore')
+makedepends=('git' 'yasm')
+#makedepends=('git' )
+conflicts=('ffmpeg')
+provides=("ffmpeg=$pkgver" "qt-faststart")
+source=("$pkgname"::'git://source.ffmpeg.org/ffmpeg.git')
+md5sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/$pkgname"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cd "$srcdir/$pkgname"
+
+big(){
+  ./configure \
+		--prefix=/usr \
+		--disable-ffserver \
+		--disable-outdev=oss,caca \
+		--disable-debug \
+		--enable-shared \
+	--enable-gpl \
+	--enable-pic \
+    --enable-x11grab \
+    --enable-libmp3lame --enable-libtheora  --enable-libvorbis --enable-libvpx --enable-libx264 \
+    --enable-libxvid --enable-shared --enable-version3 
+}
+
+./configure \
+        --prefix=/usr \
+        --enable-shared \
+        --disable-static \
+        --enable-gpl \
+        --enable-runtime-cpudetect \
+        --enable-avresample \
+        --enable-pthreads \
+        --enable-small \
+    --disable-ffserver \
+        --disable-ffprobe \
+        --disable-encoder=h263 \
+        --disable-encoder=h263p \
+        --disable-encoder=mpeg2video \
+        --disable-encoder=msmpeg4v1 \
+        --disable-encoder=msmpeg4v2 \
+        --disable-encoder=msmpeg4v3 \
+        --disable-symver \
+        --disable-debug \
+        --disable-doc    \
+    --enable-x11grab \
+    
+    #from vid capt
+#		${APPEND}
+#    --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libvo-aacenc --enable-libvo-amrwbenc
+
+#	--disable-yasm \
+
+#		--disable-static \
+#		--enable-gpl \
+#		--enable-version3 \
+#		--enable-shared \
+#		--enable-libxvid \
+#		--enable-libvorbis \
+#		--enable-libtheora \
+#		--enable-postproc \
+
+x(){
+    --prefix=/usr \
+    --disable-static \
+    --enable-gpl \
+    --enable-libass \
+    --enable-libfdk-aac \
+    --enable-libfreetype \
+    --enable-libmp3lame \
+    --enable-libopus \
+    --enable-libtheora \
+    --enable-libvorbis \
+    --enable-libvpx \
+    --enable-libx264 \
+    --enable-libx265 \
+    --enable-nonfree \
+    --enable-shared \
+    --enable-x11grab
+}
+  make
+ # make tools/qt-faststart
+  #make doc
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  make DESTDIR="$pkgdir" install install-man
+#  install -D -m755 tools/qt-faststart "$pkgdir/usr/bin/qt-faststart"
+}

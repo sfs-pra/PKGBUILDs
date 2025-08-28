@@ -1,0 +1,30 @@
+# Contributor: sfs <sfslinux@gmail.com>
+pkgname=gshot
+pkgver=0.8.3
+pkgrel=1
+pkgdesc="Screen shot"
+arch=(i686 x86_64 aarch64)
+url="http://puppyrus.org"
+license=('GPL')
+#groups=(games)
+depends=('gtk2')
+install=
+source=(https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/gshot/gshot-$pkgver.tar.xz)
+#noextract=()
+md5sums=('SKIP') #ffcad22a9002d2a5c37d9d302b9614d1')
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+    export LIBS="-lX11"
+  ./configure --prefix=/usr # $([ "`uname -m`" = "aarch64" ] && echo " --host=aarch64-unknown-linux-gnu  --build=aarch64-unknown-linux-gnu ")
+  make || return 1
+
+}
+
+package() {
+  cd $pkgname-$pkgver
+  make DESTDIR="$pkgdir" install
+}
+
+
+# vim:set ts=2 sw=2 et:

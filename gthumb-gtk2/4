@@ -1,0 +1,22 @@
+[200~	Source code location : .
+	Compiler             : aarch64-unknown-linux-gnu-gcc
+	Prefix               : /usr
+	CFLAGS		     : -march=armv8-a -O2 -pipe -fstack-protector --param=ssp-buffer-size=4 -fPIC -DPIC -Wl,--as-needed  -Wall -Wcast-align -Wtype-limits -Wclobbered -Wempty-body -Wignored-qualifiers
+	Debug                : no
+	Run in place         : no
+	Build tests          : no
+	Use libunique        : no
+	Exiv2 support        : yes
+	JPEG tools           : yes
+	TIFF tools           : yes
+	Clutter support      : no
+	GStreamer support    : no
+	Use libopenraw       : no (uses dcraw)
+	Web services support : no
+	Use GNOME Keyring    : no
+	Burn disc support    : no
+	Web albums           : no
+	SM client support    : xsmp
+	Map support          : no
+	GNOME 3 support      : no
+[201~

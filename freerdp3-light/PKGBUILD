@@ -1,0 +1,146 @@
+# Maintainer: Sergej Pupykin <pupykin.s+arch@gmail.com>
+# Contributor: David Runge <dvzrv@archlinux.org>
+# Contributor: Stijn Segers <francesco dot borromini at gmail dot com>
+
+_name=FreeRDP
+pkgname=freerdp
+pkgver=3.5.0
+_libver=${pkgver/.*/}
+pkgrel=6
+epoch=2
+pkgdesc="Free implementation of the Remote Desktop Protocol (RDP)"
+arch=(x86_64)
+url="https://www.freerdp.com/"
+license=(Apache-2.0)
+depends=(
+#  cjson
+  fuse3
+  gcc-libs
+  glibc
+  libcups
+  libx11
+  libxcursor
+  libxext
+  libxdamage
+  libxfixes
+  libxkbcommon
+  libxi
+  libxinerama
+  libxkbfile
+  libxrandr
+  libxrender
+  libxtst
+#  sdl2
+#  sdl2_ttf
+  wayland
+)
+makedepends=(
+  alsa-lib
+  cmake
+  docbook-xsl
+  e2fsprogs
+  ffmpeg
+  glib2
+  gtk3
+  icu
+  krb5
+#  libp11
+  libpulse
+  libusb
+  openssl
+  pam
+  pkcs11-helper
+#  webkit2gtk-4.1
+  xmlto
+  xorgproto
+  zlib
+)
+provides=(
+  libfreerdp-client$_libver.so
+  libfreerdp-server-proxy$_libver.so
+  libfreerdp-server$_libver
+  libfreerdp-shadow-subsystem$_libver.so
+  libfreerdp-shadow$_libver.so
+  libfreerdp$_libver.so
+  libwinpr-tools$_libver.so
+  libwinpr$_libver.so
+)
+source=(
+  https://github.com/$pkgname/$pkgname/archive/$pkgver/$pkgname-$pkgver.tar.gz
+  0001-Use-webkit2gtk-4.1.patch
+)
+sha512sums=('9f9f5898cdd9fe19035aa7a3a016b33513d0e9d9c2325ed62713a287253de468f339b397ba3bdfa729163800858aa25e22e41d46faf94742ed16e586b67efd05'
+            '0bfdf8825f586a548eaef309f64fb50ea9e2598592f778aa835bbec1a0600d715b8fb28f5950aaeb5ef981a33d5f9f3f39f4fd1800bdf9e5630d9925a9fbab04')
+b2sums=('b48fc8e452c2251c75995af524dddaad742c9e962d0fe046b6f9479c66a14956604bd9e5a6e6cd1853f14ddcfa8ee9a411554f3f5e18979158a992d3f6e464d9'
+        'bbee3975cdcd0ce421ecd8825d1b6dbdbd1565b612a51e7d9423e79226579587031b5ebe7e5251c88015e9047cd35818bad338a7048acfddac137ffe23197b71')
+
+prepare() {
+  cd $_name-$pkgver
+
+  # Use the newer WebKit
+  patch -Np1 < ../0001-Use-webkit2gtk-4.1.patch
+}
+
+build() {
+  local cmake_options=(
+    -B build
+    -D CHANNEL_URBDRC_CLIENT=ON
+    -D CMAKE_INSTALL_PREFIX=/usr
+    -D CMAKE_INSTALL_LIBDIR=lib
+    -D CMAKE_BUILD_TYPE=None
+    -D CMAKE_SKIP_INSTALL_RPATH=ON
+    -D PROXY_PLUGINDIR=/usr/lib/$pkgname/server/proxy/plugins
+    -D RDTK_FORCE_STATIC_BUILD=ON  # prevent file conflicts with freerdp2
+    -D UWAC_FORCE_STATIC_BUILD=ON  # prevent file conflicts with freerdp2
+    -D WITH_ALSA=ON
+    -D WITH_BINARY_VERSIONING=ON  # prevent file conflicts with freerdp2
+    -D WITH_CHANNELS=ON
+    -D WITH_CLIENT_CHANNELS=ON
+    -D WITH_CUPS=ON
+-D WITH_DSP_FFMPEG=ON
+-D WITH_FFMPEG=ON
+    -D WITH_FUSE=ON
+    -D WITH_ICU=ON
+    -D WITH_JPEG=ON
+    -D WITH_PCSC=ON
+    -D WITH_PULSE=ON
+    -D WITH_SERVER=ON
+    -D WITH_SERVER_CHANNELS=ON
+    -D WITH_SYSTEMD=ON
+-D WITH_SWSCALE=ON
+    -D WITH_WAYLAND=ON
+    -D WITH_WINPR_TOOLS=ON
+    -D WITH_X11=ON
+-D WITH_WEBVIEW=OFF
+    -S $_name-$pkgver
+    -W no-dev
+  )
+
+  cmake "${cmake_options[@]}"
+  cmake --build build --verbose
+}
+
+check() {
+  ctest --test-dir build --output-on-failure
+}
+
+package() {
+  depends+=(
+    alsa-lib libasound.so
+    e2fsprogs libcom_err.so
+    ffmpeg libavcodec.so libavutil.so libswresample.so libswscale.so
+    glib2 libglib-2.0.so libgobject-2.0.so
+    gtk3 libgtk-3.so
+    icu libicuuc.so
+    krb5 libk5crypto.so libkrb5.so
+    libpulse libpulse.so
+    libusb libusb-1.0.so
+    openssl libcrypto.so libssl.so
+    pam libpam.so
+    webkit2gtk-4.1 libjavascriptcoregtk-4.1.so libwebkit2gtk-4.1.so
+    zlib libz.so
+  )
+
+  DESTDIR="$pkgdir" cmake --install build
+  install -vDm 644 $_name-$pkgver/{ChangeLog,README.md} -t "$pkgdir/usr/share/doc/$pkgname/"
+}
