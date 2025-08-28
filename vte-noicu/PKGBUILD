@@ -1,0 +1,73 @@
+# Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
+# Contributor: Ionut Biru <ibiru@archlinux.org>
+
+pkgbase=vte3
+_pkgname=(vte3 vte-common)
+pkgname=(vte3-noicu vte-common-noicu)
+pkgver=0.76.0
+pkgrel=1
+pkgdesc="Virtual Terminal Emulator widget"
+url="https://wiki.gnome.org/Apps/Terminal/VTE"
+arch=(x86_64)
+license=(LGPL)
+depends=(gtk3 pcre2 gnutls fribidi systemd)
+makedepends=(gobject-introspection vala git gtk-doc gperf meson)
+_commit=6a0a9fed4d54122df31c13d601b1509597a36f2b  # tags/0.66.2^0
+#source=("git+https://gitlab.gnome.org/GNOME/vte.git#commit=$_commit")
+source=("git+https://gitlab.gnome.org/GNOME/vte.git#tag=$pkgver")
+#b2sums=('15a6167ab3b109cf7107d9795e415b56841c31975b284d11a14dac5e3b6ad80a0333b261e5d5e45adfd390ae5822a60cfc27228b4e1cf55bb8cdf8ad81502871')
+sha256sums=('SKIP')
+
+replaces=('vte3')
+conflicts=('vte3')
+provides=('vte3')
+
+pkgver() {
+  cd vte
+  git describe --tags | sed 's/[^-]*-g/r&/;s/-/+/g'
+}
+
+prepare() {
+  cd vte
+}
+
+build() {
+  arch-meson vte build \
+    -D b_lto=false \
+    -D docs=false \
+    -D gtk4=false \
+    -D icu=false
+  meson compile -C build
+}
+
+check() {
+  meson test -C build --print-errorlogs
+}
+
+_pick() {
+  local p="$1" f d; shift
+  for f; do
+    d="$srcdir/$p/${f#$pkgdir/}"
+    mkdir -p "$(dirname "$d")"
+    mv "$f" "$d"
+    rmdir -p --ignore-fail-on-non-empty "$(dirname "$f")"
+  done
+}
+
+package_vte3-noicu() {
+  depends+=(vte-common)
+  provides+=(libvte-2.91.so)
+
+  meson install -C build --destdir "$pkgdir"
+
+  _pick vte-common "$pkgdir"/etc/profile.d
+  _pick vte-common "$pkgdir"/usr/lib/{systemd,vte-urlencode-cwd}
+}
+
+package_vte-common-noicu() {
+  pkgdesc="Files shared by VTE libraries"
+  depends=(sh)
+  mv vte-common/* "$pkgdir"
+}
+
+# vim:set sw=2 et:

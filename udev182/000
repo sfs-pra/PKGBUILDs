@@ -1,0 +1,16 @@
+#!/bin/sh
+#autoconf
+
+./configure  \
+--prefix=/usr --localstatedir=/var --sysconfdir=/etc --libexecdir=/usr/lib/udev \
+	    --disable-introspection \
+	   --sbindir=/usr/bin  \
+	   --disable-debug --disable-gtk-doc
+# --with-selinux --with-rootlibdir="/usr/lib"
+  make LIBS="-lrt"
+
+exit
+for i in `ls -1 *.patch` ;do
+    echo $i
+    patch -Np1 -i $i
+done

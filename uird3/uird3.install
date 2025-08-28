@@ -1,0 +1,13 @@
+post_install() {
+    mkuird lfa -l -e plymouth,uird-network,network -n /boot/initrd-u.xz
+    grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+post_upgrade() {
+    post_install
+}
+
+post_remove() {
+    rm /boot/initrd-u.xz
+    grub-mkconfig -o /boot/grub/grub.cfg
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+#250105 sfs
+mkuird lfa -l -e plymouth,uird-network,uird-soft,crypto,network,virt,extra,ntfs,xfs,btrfs,dm,xfs,nfs,cifs,udf \
+    -n initrd-u3l.xz

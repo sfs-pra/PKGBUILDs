@@ -1,0 +1,120 @@
+# Maintainer: sfslinux@gmail.com
+# Contributor: 
+
+uirdbusybox=uird3-busybox
+uirddracut=uird3-dracut
+uird=uird
+ver=3
+
+pkgname=(${uirdbusybox} ${uirddracut} ${uird}${ver})
+_gitname=uird
+pkgver=r707.d6ed136
+pkgrel=1
+pkgdesc='UIRD initrd'
+arch=('i686' 'x86_64' 'aarch64')
+url="https://github.com/neobht/uird.git"
+license=('GPL')
+#groups=('uird')
+makedepends=('make' 'gcc' 'pkgconfig' 'git')
+source=("git+$url#branch=${uird}-${ver}" "50-dracut.install" mkuird-lf uird.cfg 85_uird)
+md5sums=('SKIP'
+    '1a1f7a6dcac19ba30a6c43ca4a778a2f'
+    'SKIP'
+    'SKIP'
+    'SKIP'
+    )
+
+prepare() {
+  cd "${srcdir}/${_gitname}"
+  # Измените URL подмодулей на HTTPS
+  git config -f .gitmodules submodule.busybox.url https://github.com/mirror/busybox.git
+  git config -f .gitmodules submodule.dracut-ng.url https://github.com/dracut-ng/dracut-ng.git
+
+  # Обновите и инициализируйте подмодули
+  git submodule update --init --recursive
+
+  # Установите конкретные коммиты для подмодулей
+  cd busybox
+  git checkout 371fe9f
+  cd ../dracut-ng
+  git checkout 43507aa
+  cd ..
+}
+
+pkgver() {
+    cd "${srcdir}/${_gitname}"
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+    msg "If you want to disable an applet, comment pkgbuild variables"
+    cd "${srcdir}/${_gitname}"
+    [ "${uirdbusybox}" ] && ./make_busybox.sh
+    [ "${uirddracut}" ]  && ./make_dracut.sh
+    echo
+}
+
+package_uird3-busybox() {
+pkgdesc="UIRD busybox"
+conflicts=('uird-busybox')
+    cd "${srcdir}/${_gitname}/busybox"
+#    make DESTDIR="$pkgdir/usr/lib/uird/busybox" install
+    mkdir -p "${pkgdir}"/usr/lib/uird/busybox
+    install -m755 "${srcdir}"/${_gitname}/busybox/busybox "${pkgdir}"/usr/lib/uird/busybox
+}
+
+package_uird3-dracut() {
+pkgdesc="UIRD dracut"
+depends=('bash' 'coreutils' 'cpio' 'filesystem' 'findutils' 'grep' 'gzip'
+         'kmod' 'pkgconf' 'procps-ng' 'sed' 'systemd' 'util-linux' 'xz')
+provides=('initramfs')
+conflicts=('dracut' 'uird-dracut' 'dracut-ng')
+backup=('etc/dracut.conf')
+install=uird3.install
+
+    cd "${srcdir}/${_gitname}/dracut-ng"
+#    mkdir -p   "${pkgdir}"/usr/lib/uird/dracut
+#    make DESTDIR="$pkgdir"/usr/lib/uird/dracut install
+    make DESTDIR="$pkgdir" install
+    cp -R "$srcdir/${_gitname}"/modules.d/* "$pkgdir"/usr/lib/dracut/modules.d/
+    cp -R "$srcdir/${_gitname}"/dracut-ng/dracut.sh "$pkgdir"/usr/lib/dracut/dracut.sh
+    install -Dm644 "${srcdir}/${_gitname}"/dracut.conf "${pkgdir}"/etc/dracut.conf
+    rm -R "${pkgdir}"/usr/etc
+    rm "${pkgdir}"/usr/lib/kernel/install.d/51-dracut-rescue.install 
+    install -m755 "${srcdir}"/50-dracut.install "${pkgdir}"/usr/lib/kernel/install.d/50-dracut.install
+}
+
+package_uird3() {
+pkgdesc="UIRD initrd"
+conflicts=('uird')
+backup=('etc/dracut.conf')
+arch=('any')
+depends=('uird3-busybox' 'uird3-dracut' 'cpio' 'filesystem' 'findutils' 'grep' 'gzip'
+         'kmod' 'pkgconf' 'procps-ng' 'sed' 'systemd' 'util-linux' 'xz')
+optdepends=('curlftpfs: mount sources, and changes via ftp for UIRD'
+'sshfs: mount sources, and changes via ssh for UIRD'
+'btrfs-progs: create, mount and check btrfs image files for UIRD changes and homes'
+'e2fsprogs: check ext* fs for UIRD'
+'rsync: add rsync support for UIRD sources'
+'aria2: multi-protocol preloader for UIRD sources'
+'qemu: qemu-nbd, qemu-img are necessary to mount qcow2,vdi,vmdk etc')
+
+    cd "${srcdir}/${_gitname}"
+    mkdir -p "${pkgdir}"/usr/lib/uird "${pkgdir}"/usr/bin "${pkgdir}"/etc
+  install -Dm644 {mkuird.cfg,dracut.conf} "${pkgdir}"/usr/lib/uird
+  install -Dm644 mkuird.cfg "${pkgdir}"/etc
+#  sed -i 's/^#WORKDIR=.*/WORKDIR=\/usr\/share\/mkuird/' "${pkgdir}"/etc/mkuird.cfg
+  sed -i 's/^#WORKDIR=.*/WORKDIR=\/usr\/lib\/uird/' "${pkgdir}"/etc/mkuird.cfg
+  
+  cp -a {configs,keys,i18n,initrd,modules.d} "${pkgdir}"/usr/lib/uird
+  ln -sf /usr/lib/dracut "${pkgdir}"/usr/lib/uird/dracut-ng
+  ln -sf /etc/dracut.conf "${pkgdir}"/usr/lib/uird/dracut.conf
+    rm -R "${pkgdir}"/usr/lib/uird/modules.d
+  install -Dm755 "mkuird" "${pkgdir}"/usr/lib/uird
+  ln -sf /usr/lib/uird/mkuird "${pkgdir}"/usr/bin/mkuird
+  sed -i 's#./dracut/dracut.sh#dracut#' "${pkgdir}"/usr/lib/uird/mkuird 
+  install -m755 "${srcdir}"/mkuird-lf "${pkgdir}"/usr/bin/mkuird-lf
+  install -Dm755 "${srcdir}"/85_uird "${pkgdir}"/etc/grub.d/85_uird
+  install -Dm644 "${srcdir}"/uird.cfg "${pkgdir}"/boot/grub/uird.cfg
+#  install -m644 "${srcdir}"/mkuird-light.cfg "${pkgdir}"/etc/mkuird-light.cfg
+}

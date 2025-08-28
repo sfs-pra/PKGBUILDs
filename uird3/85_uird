@@ -1,0 +1,10 @@
+#!/bin/sh
+
+echo "Adding UIRD option." >&2
+
+cat << EOF
+menuentry "UIRD - initrd для модульных Linux" --class linux --id iso {
+	search --set=root --no-floppy --file /boot/grub/uird.cfg
+	configfile /boot/grub/uird.cfg
+}
+EOF
