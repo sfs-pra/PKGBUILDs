@@ -1,0 +1,23 @@
+pkgname=am
+pkgver=5.6.1
+pkgrel=1
+pkgdesc='Database & solutions for all AppImages and portable apps'
+url='https://github.com/ivan-hc/AM-Application-Manager'
+license=('GPL')
+makedepends=('git')
+depends=('coreutils' 'grep' 'sed' 'wget' 'sudo')
+source=(git+$url)
+arch=('x86_64')
+
+package() {
+  cd "$srcdir/AM-Application-Manager"
+  install -D -m755 APP-MANAGER "$pkgdir/opt/am/APP-MANAGER"
+  install -D -m644 programs/$arch-apps "$pkgdir/opt/am/$arch-apps"
+    install -d -m755 $pkgdir/etc/bash_completion.d $pkgdir/usr/bin
+    install -d -m757 $pkgdir/opt/am/.cache
+  ln -s /opt/am/APP-MANAGER $pkgdir/usr/bin/am
+    echo '#!/usr/bin/env bash' >> $pkgdir/etc/bash_completion.d/am-completion.sh 
+    echo 'complete -W "$(cat /opt/am/list 2>/dev/null)" am' >> $pkgdir/etc/bash_completion.d/am-completion.sh 
+    chmod a+x $pkgdir/etc/bash_completion.d/am-completion.sh 
+}
+

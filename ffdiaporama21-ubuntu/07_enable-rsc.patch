@@ -1,0 +1,17 @@
+Description: Add resources project as a subproject of the main pro file
+ This makes it much easier to build (no rules changes required)
+Author: James Cowgill <jcowgill@debian.org>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/ffDiaporama.pro
++++ b/ffDiaporama.pro
+@@ -39,6 +39,9 @@ TARGET          += ffDiaporama_lib
+ SUBDIRS         += src/ffDiaporama
+ TARGET          += ffDiaporama
+ 
++# ffDiaporama resources
++SUBDIRS         += rsc/ffDiaporama_rsc.pro
++
+ # Translation files
+ TRANSLATIONS += locale/ffDiaporama_fr.ts \
+     locale/ffDiaporama_it.ts \

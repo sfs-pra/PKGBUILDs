@@ -1,0 +1,15 @@
+Description: Add missing loop increment in BlueScanLine function
+Author: Rico Tzschichholz <ricotz@ubuntu.com>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/ffDiaporama_lib/ImageFilters.cpp
++++ b/src/ffDiaporama_lib/ImageFilters.cpp
+@@ -836,7 +836,7 @@ void BlurScanLine(float *kernel,int kern
+             scale = 0.0;
+             k = kernel;
+             src = source;
+-            for (i=0;i<columns;++k,src+=offset) {
++            for (i=0;i<columns;++k,src+=offset,i++) {
+                 if((i >= (x-kern_width/2)) && (i <= (x+kern_width/2))) {
+                     aggregate.red  +=(*k)*qRed(*src);
+                     aggregate.green+=(*k)*qGreen(*src);

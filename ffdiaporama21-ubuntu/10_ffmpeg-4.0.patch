@@ -1,0 +1,75 @@
+Description: Add patch to fix FTBFS with FFmpeg 4.0
+Author: James Cowgill <jcowgill@debian.org>
+Bug-Debian: https://bugs.debian.org/888354
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/ffDiaporama/engine/cDeviceModelDef.h
++++ b/src/ffDiaporama/engine/cDeviceModelDef.h
+@@ -59,8 +59,7 @@ extern "C" {
+ #include <libavformat/avformat.h>
+ #include <libavformat/avio.h>
+ 
+-#include "libavfilter/avfilter.h"
+-#include "libavfilter/avfiltergraph.h"
++#include <libavfilter/avfilter.h>
+ 
+ #if (LIBAVUTIL_VERSION_MICRO<100)&&(LIBAVCODEC_VERSION_MICRO<100)&&(LIBAVFORMAT_VERSION_MICRO<100)&&(LIBAVDEVICE_VERSION_MICRO<100)&&(LIBAVFILTER_VERSION_MICRO<100)&&(LIBSWSCALE_VERSION_MICRO<100)
+     #define LIBAV
+--- a/src/ffDiaporama/engine/cBaseMediaFile.cpp
++++ b/src/ffDiaporama/engine/cBaseMediaFile.cpp
+@@ -2689,8 +2689,8 @@ int cVideoFile::VideoFilter_Open() {
+             .arg(LibavVideoFile->streams[VideoStreamNumber]->codec->sample_aspect_ratio.num)
+             .arg(LibavVideoFile->streams[VideoStreamNumber]->codec->sample_aspect_ratio.den);
+ 
+-        AVFilter *srcFilter=avfilter_get_by_name("buffer");
+-        AVFilter *outFilter=avfilter_get_by_name("nullsink");
++        const AVFilter *srcFilter=avfilter_get_by_name("buffer");
++        const AVFilter *outFilter=avfilter_get_by_name("nullsink");
+ 
+         if ((result=avfilter_graph_create_filter(&VideoFilterIn,srcFilter,"src",args.toLocal8Bit().constData(),NULL,VideoFilterGraph))<0) {
+             ToLog(LOGMSG_CRITICAL,QString("Error in cVideoFile::VideoFilter_Open : avfilter_graph_create_filter: src"));
+@@ -2715,8 +2715,8 @@ int cVideoFile::VideoFilter_Open() {
+             .arg(LibavVideoFile->streams[VideoStreamNumber]->codec->sample_aspect_ratio.num)
+             .arg(LibavVideoFile->streams[VideoStreamNumber]->codec->sample_aspect_ratio.den);
+ 
+-        AVFilter *srcFilter=avfilter_get_by_name("buffer");
+-        AVFilter *outFilter=avfilter_get_by_name("buffersink");
++        const AVFilter *srcFilter=avfilter_get_by_name("buffer");
++        const AVFilter *outFilter=avfilter_get_by_name("buffersink");
+ 
+         if ((result=avfilter_graph_create_filter(&VideoFilterIn,srcFilter,"src",args.toLocal8Bit().constData(),NULL,VideoFilterGraph))<0) {
+             ToLog(LOGMSG_CRITICAL,QString("Error in cVideoFile::VideoFilter_Open : avfilter_graph_create_filter: src"));
+@@ -2742,8 +2742,8 @@ int cVideoFile::VideoFilter_Open() {
+                  LibavVideoFile->streams[VideoStreamNumber]->codec->sample_aspect_ratio.num,LibavVideoFile->streams[VideoStreamNumber]->codec->sample_aspect_ratio.den
+         );
+ 
+-        AVFilter *srcFilter=avfilter_get_by_name("buffer");
+-        AVFilter *outFilter=avfilter_get_by_name("buffersink");
++        const AVFilter *srcFilter=avfilter_get_by_name("buffer");
++        const AVFilter *outFilter=avfilter_get_by_name("buffersink");
+ 
+         if ((result=avfilter_graph_create_filter(&VideoFilterIn,srcFilter,"in",args,NULL,VideoFilterGraph))<0) {
+             ToLog(LOGMSG_CRITICAL,QString("Error in cVideoFile::VideoFilter_Open : avfilter_graph_create_filter: src"));
+--- a/src/ffDiaporama/engine/_EncodeVideo.cpp
++++ b/src/ffDiaporama/engine/_EncodeVideo.cpp
+@@ -383,7 +383,7 @@ bool cEncodeVideo::AddStream(AVStream **
+             ||(!strcmp(Container->oformat->name,"mpegts"))
+             ||(!strcmp(Container->oformat->name,"3gp"))
+         )
+-        (*Stream)->codec->flags|=CODEC_FLAG_GLOBAL_HEADER;
++        (*Stream)->codec->flags|=AV_CODEC_FLAG_GLOBAL_HEADER;
+ 
+     int ThreadC =((getCpuCount()-1)>1)?(getCpuCount()-1):1;
+     if (ThreadC>0) (*Stream)->codec->thread_count=ThreadC;
+@@ -447,9 +447,9 @@ bool cEncodeVideo::OpenVideoStream(sVide
+         VideoStream->codec->qmax    =ImageHeight<=576?63:51;                av_dict_set(&opts,"qmax",QString("%1").arg(VideoStream->codec->qmax).toUtf8(),0);
+         VideoStream->codec->qmin    =ImageHeight<=576?1:11;                 av_dict_set(&opts,"qmin",QString("%1").arg(VideoStream->codec->qmin).toUtf8(),0);
+         VideoStream->codec->mb_lmin =VideoStream->codec->qmin*FF_QP2LAMBDA;
+-        VideoStream->codec->lmin    =VideoStream->codec->qmin*FF_QP2LAMBDA;
++        av_dict_set(&opts,"lmin",QString("%1").arg(VideoStream->codec->mb_lmin).toUtf8(),0);
+         VideoStream->codec->mb_lmax =VideoStream->codec->qmax*FF_QP2LAMBDA;
+-        VideoStream->codec->lmax    =VideoStream->codec->qmax*FF_QP2LAMBDA;
++        av_dict_set(&opts,"lmax",QString("%1").arg(VideoStream->codec->mb_lmax).toUtf8(),0);
+ 
+         if (ImageHeight<=720) av_dict_set(&opts,"profile","0",0); else av_dict_set(&opts,"profile","1",0);
+         if (ImageHeight>576)  av_dict_set(&opts,"slices","4",0);

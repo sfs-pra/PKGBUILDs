@@ -1,0 +1,28 @@
+# Maintainer: sfs <sfslinux at gmail dot com>
+
+gitname=btop
+pkgname=${gitname}-git
+pkgver=1.0.1.r3.g748095c
+pkgrel=1
+pkgdesc="Interactive text-mode resource monitor that shows usage and stats for processor, memory, disks, network and processes"
+url="https://github.com/aristocratos/btop"
+license=('GPL')
+arch=('i686' 'x86_64')
+makedepends=('git')
+source=("git+${url}")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "${srcdir}/${gitname}"
+    git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+	 cd "${srcdir}/${gitname}"
+	 make
+}
+
+package() {
+	 cd "${srcdir}/${gitname}"
+	 make DESTDIR="${pkgdir}" install
+}

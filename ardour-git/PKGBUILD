@@ -1,0 +1,54 @@
+# Maintainer: Boohbah <boohbah at gmail.com>
+# Contributor: SpepS <dreamspepser at yahoo.it>
+# Contributor: Bernardo Barros <bernardobarros at gmail.com>
+# Contributor: Uli Armbruster <uli_armbruster at web.de>
+
+pkgname=ardour-git
+pkgver=3.5.r394.g90a592c
+pkgrel=1
+pkgdesc="A multichannel hard disk recorder and digital audio workstation"
+arch=('i686' 'x86_64')
+url="http://ardour.org/"
+license=('GPL')
+#depends=('libgnomecanvasmm>=2.12.0' 'liblrdf>=0.4.0' 'liblo' 'aubio'
+#         'libsmf' 'lilv<=1.0.0' 'suil<=1.0.0' 'cwiid')
+depends=('libgnomecanvasmm>=2.12.0'  'liblo' 'aubio'
+         'db' 'lilv<=1.0.0' )
+makedepends=('git' 'python' 'boost' 'cppunit>=1.12.0' 'doxygen' 'graphviz')
+provides=('ardour')
+conflicts=('ardour')
+source=("${pkgname}::git://github.com/Ardour/ardour.git"
+        'ardour.desktop')
+md5sums=('SKIP'
+         '2736c648e452ae45c703e48cf64f75e7')
+
+pkgver() {
+  cd "${pkgname}"
+  git describe --long | sed -r 's/([^-]*-g)/r\1/;s/-/./g'
+}
+
+build() {
+  cd "${pkgname}"
+
+  python2 waf configure \
+    --prefix=/usr \
+    --configdir=/etc \
+    --freedesktop \
+    --noconfirm
+#    --docs \
+#    --lv2 \
+
+  python2 waf build
+}
+
+package() {
+  cd "${pkgname}"
+
+  python2 waf --destdir="${pkgdir}" install
+
+  # Install some freedesktop.org compatibility
+  install -Dm644 "${srcdir}/ardour.desktop" \
+    "${pkgdir}/usr/share/applications/ardour.desktop"
+}
+
+# vim:set ts=2 sw=2 et:

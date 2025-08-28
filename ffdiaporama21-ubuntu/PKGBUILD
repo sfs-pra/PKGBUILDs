@@ -1,0 +1,68 @@
+# Maintainer: Steffen Weber <boenki-gmx-de>
+
+pkgname=ffdiaporama
+pkgver=2.2.D759
+pkgrel=4
+pkgdesc="Movie creator from photos and video clips"
+arch=('i686' 'x86_64')
+url="http://ffdiaporama.tuxfamily.org"
+license=('GPL2')
+depends=('qt5-svg' 'qt5-tools' 'qt5-imageformats' 'qt5-multimedia' 'ffmpeg' 'pulseaudio' 'exiv2' 'shared-mime-info')
+optdepends=('ffdiaporama-texturemate: Additional background-images'
+            'ffdiaporama-openclipart: use the openclipart-library')
+provides=('ffdiaporama-rsc')
+Xsource=(http://download.tuxfamily.org/ffdiaporama/Packages/Devel/ffdiaporama_bin_2.2.devel.2014.0701.tar.gz
+        http://download.tuxfamily.org/ffdiaporama/Packages/Devel/ffdiaporama_rsc_2.2.devel.2014.0503.tar.gz
+        ffmpeg3.0.patch)
+source=(
+#http://ffdiaporama.tuxfamily.org/script/GetPackage.php?f=ffdiaporama_bin_2.1.2014.0209.tar.gz
+#http://ffdiaporama.tuxfamily.org/script/GetPackage.php?f=ffdiaporama_rsc_2.1.2014.0209.tar.gz
+http://archive.ubuntu.com/ubuntu/pool/universe/f/ffdiaporama/ffdiaporama_2.1+dfsg.orig-rsc.tar.gz
+#https://salsa.debian.org/multimedia-team/ffdiaporama/-/archive/master/ffdiaporama-master.tar.bz2
+http://archive.ubuntu.com/ubuntu/pool/universe/f/ffdiaporama/ffdiaporama_2.1+dfsg.orig.tar.gz
+#        ffmpeg3.0.patch
+ 01_fix-hardening-flags.patch 02_ffmpeg-include.patch  04_filters-missing-increment.patch 
+ 05_qcustomfoldertable-uninitialized.patch 06_libav-log-callback-mutext.patch 07_enable-rsc.patch 
+ 08_64bit-detection.patch 09_download-privacy.patch ffdiaporama-2.2-ffmpeg-3.0.patch 
+)
+md5sums=('SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+'SKIP'
+#         '945d2bc188a41d81542b18f44eeeb6bd'
+         )
+
+prepare() {
+  cd ffDiaporama
+#  patch -p1 -i ../ffmpeg3.0.patch
+    for _patch in ${srcdir}/*.patch; do
+#      patch -Np1 -i ${_patch}
+      patch -p1 -i ${_patch}
+    done
+}
+
+build() {
+  cd ffDiaporama
+  qmake-qt5 QMAKE_CFLAGS_ISYSTEM= ffDiaporama.pro
+  make
+
+#  cd ../ffDiaporama_rsc
+#  qmake-qt5 ffDiaporama_rsc.pro
+#  make
+}
+
+package() {
+  cd ffDiaporama
+  make install INSTALL_ROOT=$pkgdir
+  find $pkgdir/usr/share -type f -exec chmod 644 {} +
+
+#  cd ../ffDiaporama_rsc
+#  make install INSTALL_ROOT=$pkgdir
+}

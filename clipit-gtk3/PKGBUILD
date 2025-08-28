@@ -1,0 +1,37 @@
+# Maintainer : Bernhard Landauer <oberon@manjaro.org>
+
+pkgname=clipit-gtk3
+pkgver=1.4.4
+_pkgname=clipit-$pkgver
+pkgrel=3
+pkgdesc="Lightweight GTK+ clipboard manager (fork of Parcellite)"
+arch=('i686' 'x86_64')
+url="https://github.com/CristianHenzel/ClipIt/"
+_snapshot=git20190202
+#722fcf73fa0ce8430208c986e50b1c82975de69c
+license=('GPL3')
+depends=('gtk2')
+# 'libappindicator-gtk2')
+makedepends=('intltool')
+optdepends=('xdotool: for automatic paste')
+#source=("${_pkgname}-${_snapshot}.tar.gz::${url}/archive/${_snapshot}.tar.gz")
+source=("http://deb.debian.org/debian/pool/main/c/clipit/clipit_1.4.4+git20190202.orig.tar.xz")
+#https://github.com/CristianHenzel/ClipIt/archive/v1.4.4.tar.gz")
+md5sums=('SKIP')
+#22eb7756fe35e4ce9a5c75aa8430852e')
+
+build() {
+  cd "${srcdir}/${_pkgname}+${_snapshot}"
+  ./autogen.sh
+  ./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+--with-gtk3
+#    --enable-appindicator
+  make
+}
+
+package() {
+  cd "${srcdir}/${_pkgname}+${_snapshot}"
+  make DESTDIR=${pkgdir} install
+}

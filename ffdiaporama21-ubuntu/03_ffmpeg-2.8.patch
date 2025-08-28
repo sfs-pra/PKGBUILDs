@@ -1,0 +1,223 @@
+Description: Add support for FFmpeg 2.8
+Author: Rico Tzschichholz <ricotz@ubuntu.com>
+Author: James Cowgill <jcowgill@debian.org>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/ffDiaporama/engine/_EncodeVideo.cpp
++++ b/src/ffDiaporama/engine/_EncodeVideo.cpp
+@@ -20,7 +20,7 @@
+ 
+ #include "_EncodeVideo.h"
+ 
+-#define PIXFMT      PIX_FMT_RGB24
++#define PIXFMT      AV_PIX_FMT_RGB24
+ #define QTPIXFMT    QImage::Format_RGB888
+ 
+ //*************************************************************************************************************************************************
+@@ -185,11 +185,11 @@ void cEncodeVideo::CloseEncoder() {
+ int cEncodeVideo::getThreadFlags(AVCodecID ID) {
+     int Ret=0;
+     switch (ID) {
+-        case CODEC_ID_PRORES:
+-        case CODEC_ID_MPEG1VIDEO:
+-        case CODEC_ID_DVVIDEO:
+-        case CODEC_ID_MPEG2VIDEO:   Ret=FF_THREAD_SLICE;                    break;
+-        case CODEC_ID_H264 :        Ret=FF_THREAD_FRAME|FF_THREAD_SLICE;    break;
++        case AV_CODEC_ID_PRORES:
++        case AV_CODEC_ID_MPEG1VIDEO:
++        case AV_CODEC_ID_DVVIDEO:
++        case AV_CODEC_ID_MPEG2VIDEO:   Ret=FF_THREAD_SLICE;                    break;
++        case AV_CODEC_ID_H264 :        Ret=FF_THREAD_FRAME|FF_THREAD_SLICE;    break;
+         default:                    Ret=FF_THREAD_FRAME;                    break;
+     }
+     return Ret;
+@@ -410,8 +410,9 @@ bool cEncodeVideo::OpenVideoStream(sVide
+     // Setup codec parameters
+     VideoStream->codec->width               =ImageWidth;
+     VideoStream->codec->height              =ImageHeight;
+-    VideoStream->codec->pix_fmt             =PIX_FMT_YUV420P;
++    VideoStream->codec->pix_fmt             =AV_PIX_FMT_YUV420P;
+     VideoStream->codec->time_base           =VideoFrameRate;
++    VideoStream->time_base                  =VideoFrameRate;
+     VideoStream->codec->sample_aspect_ratio =PixelAspectRatio;
+     VideoStream->sample_aspect_ratio        =PixelAspectRatio;
+     if ((codec->id!=AV_CODEC_ID_H264)||(!VBR)) {
+@@ -434,7 +435,7 @@ bool cEncodeVideo::OpenVideoStream(sVide
+ 
+     } else if (codec->id==AV_CODEC_ID_MJPEG) {
+         //-qscale 2 -qmin 2 -qmax 2
+-        VideoStream->codec->pix_fmt             =PIX_FMT_YUVJ420P;
++        VideoStream->codec->pix_fmt             =AV_PIX_FMT_YUVJ420P;
+         VideoStream->codec->qmin                =2;
+         VideoStream->codec->qmax                =2;
+         VideoStream->codec->bit_rate_tolerance  =(ImageWidth*ImageHeight*2*VideoFrameRate.den/VideoFrameRate.num)*2;
+@@ -564,9 +565,9 @@ bool cEncodeVideo::OpenVideoStream(sVide
+     #endif
+ 
+     // Create and prepare VideoFrame and VideoFrameBuf
+-    VideoFrame=avcodec_alloc_frame();  // Allocate structure for RGB image
++    VideoFrame=av_frame_alloc();  // Allocate structure for RGB image
+     if (!VideoFrame) {
+-        ToLog(LOGMSG_CRITICAL,"EncodeVideo-OpenVideoStream: avcodec_alloc_frame() failed");
++        ToLog(LOGMSG_CRITICAL,"EncodeVideo-OpenVideoStream: av_frame_alloc() failed");
+         return false;
+     } else {
+         VideoFrameBufSize=avpicture_get_size(VideoStream->codec->pix_fmt,VideoStream->codec->width,VideoStream->codec->height);
+@@ -654,9 +655,9 @@ bool cEncodeVideo::OpenAudioStream(sAudi
+         return false;
+     }
+ 
+-    AudioFrame=avcodec_alloc_frame();
++    AudioFrame=av_frame_alloc();
+     if (AudioFrame==NULL) {
+-        ToLog(LOGMSG_CRITICAL,QString("EncodeVideo-OpenAudioStream:: avcodec_alloc_frame failed"));
++        ToLog(LOGMSG_CRITICAL,QString("EncodeVideo-OpenAudioStream:: av_frame_alloc() failed"));
+         return false;
+     }
+ 
+@@ -1095,7 +1096,7 @@ void cEncodeVideo::EncodeMusic(cDiaporam
+             if (Continue) {
+                 // Init AudioFrame
+                 AVRational AVR;
+-                avcodec_get_frame_defaults(AudioFrame);
++                av_frame_unref(AudioFrame);
+                 AVR.num                     =1;
+                 AVR.den                     =AudioStream->codec->sample_rate;
+                 AudioFrame->nb_samples      =DestPacketSize/DestSampleSize;
+@@ -1180,7 +1181,7 @@ void cEncodeVideo::EncodeVideo(QImage *S
+     int     errcode;
+ 
+     if (Image) {
+-        avcodec_get_frame_defaults(VideoFrame);
++        av_frame_unref(VideoFrame);
+         if (avpicture_fill(
+             (AVPicture *)VideoFrame,            // Frame to prepare
+             VideoFrameBuf,                      // Buffer which will contain the image data
+@@ -1228,6 +1229,9 @@ void cEncodeVideo::EncodeVideo(QImage *S
+     if ((VideoFrameNbr%VideoStream->codec->gop_size)==0) VideoFrame->pict_type=AV_PICTURE_TYPE_I;
+         else VideoFrame->pict_type=(AVPictureType)0;
+     VideoFrame->pts=VideoFrameNbr;
++    VideoFrame->format=VideoStream->codec->pix_fmt;
++    VideoFrame->width=VideoStream->codec->width;
++    VideoFrame->height=VideoStream->codec->height;
+ 
+     if ((Continue)&&(!StopProcessWanted)) {
+ 
+--- a/src/ffDiaporama/engine/cBaseMediaFile.cpp
++++ b/src/ffDiaporama/engine/cBaseMediaFile.cpp
+@@ -113,11 +113,11 @@ int  Exiv2PatchVersion=EXIV2_PATCH_VERSI
+ #define VC_USERDATA     0x00000008
+ #define VC_FLUSHED      0x00000010
+ 
+-#define PIXFMT          PIX_FMT_RGB24
++#define PIXFMT          AV_PIX_FMT_RGB24
+ #define QTPIXFMT        QImage::Format_RGB888
+ 
+-AVFrame *ALLOCFRAME()           { return avcodec_alloc_frame(); }
+-void    FREEFRAME(AVFrame **Buf){ avcodec_free_frame(Buf); *Buf=NULL; }
++AVFrame *ALLOCFRAME()           { return av_frame_alloc(); }
++void    FREEFRAME(AVFrame **Buf){ av_frame_free(Buf); *Buf=NULL; }
+ 
+ //****************************************************************************************************************************************************************
+ 
+@@ -2402,7 +2402,7 @@ bool cVideoFile::GetChildFullInformation
+                             AVFrame *FrameRGB=ALLOCFRAME();
+                             if ((FrameRGB)&&(!Thumbnail.isNull())) {
+                                 avpicture_fill((AVPicture *)FrameRGB,Thumbnail.bits(),PIXFMT,RealW,RealH);
+-                                struct SwsContext *img_convert_ctx=sws_getContext(FrameYUV->width,FrameYUV->height,(PixelFormat)FrameYUV->format,RealW,RealH,PIXFMT,SWS_FAST_BILINEAR,NULL,NULL,NULL);
++                                struct SwsContext *img_convert_ctx=sws_getContext(FrameYUV->width,FrameYUV->height,(AVPixelFormat)FrameYUV->format,RealW,RealH,PIXFMT,SWS_FAST_BILINEAR,NULL,NULL,NULL);
+                                 if (img_convert_ctx!=NULL) {
+                                     int ret = sws_scale(img_convert_ctx,FrameYUV->data,FrameYUV->linesize,0,FrameYUV->height,FrameRGB->data,FrameRGB->linesize);
+                                     if (ret>0) {
+@@ -2722,9 +2722,9 @@ int cVideoFile::VideoFilter_Open() {
+             ToLog(LOGMSG_CRITICAL,QString("Error in cVideoFile::VideoFilter_Open : avfilter_graph_create_filter: src"));
+             return result;
+         }
+-        std::vector<PixelFormat> m_formats;
+-        m_formats.push_back(PIX_FMT_YUVJ420P);
+-        m_formats.push_back(PIX_FMT_NONE);      /* always add none to get a terminated list in Libav world */
++        std::vector<AVPixelFormat> m_formats;
++        m_formats.push_back(AV_PIX_FMT_YUVJ420P);
++        m_formats.push_back(AV_PIX_FMT_NONE);      /* always add none to get a terminated list in Libav world */
+         if ((result=avfilter_graph_create_filter(&VideoFilterOut,outFilter,"out",NULL,NULL,VideoFilterGraph))<0) {
+             ToLog(LOGMSG_CRITICAL,QString("Error in cVideoFile::VideoFilter_Open : avfilter_graph_create_filter: out"));
+             return result;
+@@ -3482,7 +3482,7 @@ QImage *cVideoFile::ConvertYUVToRGB(bool
+         struct SwsContext *img_convert_ctx=sws_getContext(
+             Frame->width,                                                     // Src width
+             Frame->height,                                                    // Src height
+-            (PixelFormat)Frame->format,                                       // Src Format
++            (AVPixelFormat)Frame->format,                                       // Src Format
+             W,                                                                // Destination width
+             H,                                                                // Destination height
+             PIXFMT,                                                           // Destination Format
+@@ -3565,11 +3565,11 @@ QImage *cVideoFile::ImageAt(bool Preview
+ int cVideoFile::getThreadFlags(AVCodecID ID) {
+     int Ret=0;
+     switch (ID) {
+-        case CODEC_ID_PRORES:
+-        case CODEC_ID_MPEG1VIDEO:
+-        case CODEC_ID_DVVIDEO:
+-        case CODEC_ID_MPEG2VIDEO:   Ret=FF_THREAD_SLICE;                    break;
+-        case CODEC_ID_H264 :        Ret=FF_THREAD_FRAME|FF_THREAD_SLICE;    break;
++        case AV_CODEC_ID_PRORES:
++        case AV_CODEC_ID_MPEG1VIDEO:
++        case AV_CODEC_ID_DVVIDEO:
++        case AV_CODEC_ID_MPEG2VIDEO:   Ret=FF_THREAD_SLICE;                    break;
++        case AV_CODEC_ID_H264 :        Ret=FF_THREAD_FRAME|FF_THREAD_SLICE;    break;
+         default:                    Ret=FF_THREAD_FRAME;                    break;
+     }
+     return Ret;
+--- a/src/ffDiaporama/engine/cDeviceModelDef.h
++++ b/src/ffDiaporama/engine/cDeviceModelDef.h
+@@ -53,7 +53,6 @@ extern "C" {
+ 
+ #include <libavutil/mathematics.h>
+ #include <libavutil/pixdesc.h>
+-#include <libavutil/audioconvert.h>
+ 
+ #include <libavcodec/avcodec.h>
+ 
+@@ -84,8 +83,8 @@ extern "C" {
+ #elif (LIBAVUTIL_VERSION_MICRO>=100)&&(LIBAVCODEC_VERSION_MICRO>=100)&&(LIBAVFORMAT_VERSION_MICRO>=100)&&(LIBAVDEVICE_VERSION_MICRO>=100)&&(LIBAVFILTER_VERSION_MICRO>=100)&&(LIBSWSCALE_VERSION_MICRO>=100)
+     #define FFMPEG
+     #include "libswresample/swresample.h"
+-    #define RESAMPLE_MAX_CHANNELS SWR_CH_MAX
+-    #include "libavfilter/avcodec.h"
++    #define RESAMPLE_MAX_CHANNELS 64
++    #include "libavcodec/avcodec.h"
+     #include "libavfilter/buffersink.h"
+     #include "libavfilter/buffersrc.h"
+     #if     ((LIBAVUTIL_VERSION_INT>=AV_VERSION_INT(52,48,100))&&(LIBAVCODEC_VERSION_INT>=AV_VERSION_INT(55,39,100))&&(LIBAVFORMAT_VERSION_INT>=AV_VERSION_INT(55,19,104))&&(LIBAVDEVICE_VERSION_INT>=AV_VERSION_INT(55,5,100))&&(LIBAVFILTER_VERSION_INT>=AV_VERSION_INT(3,90,100))&&(LIBSWSCALE_VERSION_INT>=AV_VERSION_INT(2,5,101))&&(LIBSWRESAMPLE_VERSION_INT>=AV_VERSION_INT(0,17,104)))
+@@ -110,31 +109,6 @@ extern "C" {
+     #define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
+ #endif
+ 
+-#if !defined(FF_API_CODEC_ID)
+-    #define AV_CODEC_ID_NONE        CODEC_ID_NONE
+-    #define AV_CODEC_ID_MJPEG       CODEC_ID_MJPEG
+-    #define AV_CODEC_ID_MPEG2VIDEO  CODEC_ID_MPEG2VIDEO
+-    #define AV_CODEC_ID_MPEG4       CODEC_ID_MPEG4
+-    #define AV_CODEC_ID_H264        CODEC_ID_H264
+-    #define AV_CODEC_ID_VP8         CODEC_ID_VP8
+-    #define AV_CODEC_ID_FLV1        CODEC_ID_FLV1
+-    #define AV_CODEC_ID_THEORA      CODEC_ID_THEORA
+-    #define AV_CODEC_ID_WMV1        CODEC_ID_WMV1
+-    #define AV_CODEC_ID_WMV2        CODEC_ID_WMV2
+-    #define AV_CODEC_ID_WMV3        CODEC_ID_WMV3
+-    #define AV_CODEC_ID_PCM_S16LE   CODEC_ID_PCM_S16LE
+-    #define AV_CODEC_ID_MP3         CODEC_ID_MP3
+-    #define AV_CODEC_ID_AAC         CODEC_ID_AAC
+-    #define AV_CODEC_ID_AC3         CODEC_ID_AC3
+-    #define AV_CODEC_ID_VORBIS      CODEC_ID_VORBIS
+-    #define AV_CODEC_ID_MP2         CODEC_ID_MP2
+-    #define AV_CODEC_ID_AMR_WB      CODEC_ID_AMR_WB
+-    #define AV_CODEC_ID_AMR_NB      CODEC_ID_AMR_NB
+-    #define AV_CODEC_ID_FLAC        CODEC_ID_FLAC
+-    #define AV_CODEC_ID_WMAV1       CODEC_ID_WMAV1
+-    #define AV_CODEC_ID_WMAV2       CODEC_ID_WMAV2
+-#endif
+-
+ #if !defined(avcodec_free_frame)
+     #define avcodec_free_frame  av_freep
+ #endif

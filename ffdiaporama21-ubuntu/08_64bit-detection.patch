@@ -1,0 +1,87 @@
+Description: Fix 64-bit detection
+ Remove the bitness detection from the qmake file and use GCC's
+ __SIZEOF_POINTER__ to detect it in the places it is useful to do so.
+Author: James Cowgill <jcowgill@debian.org>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/ffDiaporama/engine/cApplicationConfig.cpp
++++ b/src/ffDiaporama/engine/cApplicationConfig.cpp
+@@ -242,10 +242,8 @@ cApplicationConfig::cApplicationConfig(Q
+         WINDOWS_PICTURES =Settings.value("My Pictures").toString();
+         WINDOWS_VIDEO    =Settings.value("My Video").toString();
+         WINDOWS_DOCUMENTS=Settings.value("Personal").toString();
+-    #elif defined(Q_OS_LINUX64)
+-        Plateforme="Unix/Linux 64 bits";
+-    #elif defined(Q_OS_LINUX32)
+-        Plateforme="Unix/Linux 32 bits";
++    #elif defined(Q_OS_LINUX)
++        Plateforme="Unix/Linux";
+     #elif defined(Q_OS_SOLARIS64)
+         Plateforme="Solaris 64 bits";
+     #elif defined(Q_OS_SOLARIS32)
+@@ -661,7 +659,7 @@ bool cApplicationConfig::LoadConfigurati
+         if ((root.elementsByTagName("EditorOptions").length()>0)&&(root.elementsByTagName("EditorOptions").item(0).isElement()==true)) {
+             QDomElement Element=root.elementsByTagName("EditorOptions").item(0).toElement();
+             if (Element.hasAttribute("MemCacheMaxValue"))           MemCacheMaxValue            =Element.attribute("MemCacheMaxValue").toLongLong();
+-            #if (!defined(Q_OS_WIN64))&&(defined(Q_OS_WIN32) || defined(Q_OS_LINUX32) || defined(Q_OS_SOLARIS32))
++            #if (!defined(Q_OS_WIN64))&&(defined(Q_OS_WIN32) || __SIZEOF_POINTER__ < 8)
+             if (MemCacheMaxValue>int64_t(512*1024*1024)) MemCacheMaxValue=int64_t(512*1024*1024);
+             #endif
+             if (Element.hasAttribute("SDLAudioOldMode"))            SDLAudioOldMode             =Element.attribute("SDLAudioOldMode")=="1";
+--- a/src/ffDiaporama/ffDiaporama.pro
++++ b/src/ffDiaporama/ffDiaporama.pro
+@@ -61,14 +61,7 @@ unix {
+ 
+     contains(DEFINES,Q_OS_SOLARIS) {
+ 
+-        HARDWARE_PLATFORM = $$system(uname -m)
+-        contains(HARDWARE_PLATFORM,x86_64) {
+-            DEFINES+=Q_OS_SOLARIS64
+-            message("Solaris x86_64 build")
+-        } else {
+-            DEFINES+=Q_OS_SOLARIS32
+-            message("Solaris x86 build")
+-        }
++        message("Solaris build")
+         message("Use ffmpeg in /opt/gnu/include")
+         INCLUDEPATH += /opt/gnu/include
+         DEFINES     += USELIBSWRESAMPLE
+@@ -76,15 +69,7 @@ unix {
+ 
+     } else {
+ 
+-        HARDWARE_PLATFORM = $$system(uname -m)
+-        contains(HARDWARE_PLATFORM,x86_64) {
+-            DEFINES+=Q_OS_LINUX64
+-            message("Linux x86_64 build")
+-        } else {
+-            DEFINES+=Q_OS_LINUX32
+-            message("Linux x86 build")
+-        }
+-
++        message("Linux build")
+         message("Use ffmpeg")
+         DEFINES += USELIBSWRESAMPLE
+         LIBS    += -lswresample
+--- a/src/ffDiaporama/DlgAppSettings/DlgApplicationSettings.cpp
++++ b/src/ffDiaporama/DlgAppSettings/DlgApplicationSettings.cpp
+@@ -79,7 +79,7 @@ void DlgApplicationSettings::DoInitDialo
+         ui->RasterModeCB->setVisible(false);
+     #endif
+ 
+-    #if (!defined(Q_OS_WIN64))&&(defined(Q_OS_WIN32) || defined(Q_OS_LINUX32) || defined(Q_OS_SOLARIS32))
++    #if (!defined(Q_OS_WIN64))&&(defined(Q_OS_WIN32) || __SIZEOF_POINTER__ < 8)
+         if      (ApplicationConfig->MemCacheMaxValue<=int64_t(256*1024*1024))     ui->MemCacheProfilCB->setCurrentIndex(0);
+         else if (ApplicationConfig->MemCacheMaxValue<=int64_t(512*1024*1024))     ui->MemCacheProfilCB->setCurrentIndex(1);
+         else ui->MemCacheProfilCB->setCurrentIndex(2);
+--- a/src/ffDiaporama/DlgCheckConfig/DlgCheckConfig.cpp
++++ b/src/ffDiaporama/DlgCheckConfig/DlgCheckConfig.cpp
+@@ -57,7 +57,7 @@ void DlgCheckConfig::DoInitDialog() {
+     ui->ListWidget->addItem(new QListWidgetItem(QString("%1 %2 (%3) ...").arg(APPLICATION_NAME).arg(CurrentAppName).arg(CurrentAppVersion)));
+     ui->ListWidget->addItem(new QListWidgetItem(QIcon(ICON_GREEN),QApplication::translate("DlgCheckConfig","Operating system version: %1 - %2 Core/CPU").arg(ApplicationConfig->Plateforme).arg(getCpuCount())));
+ 
+-    #if (!defined(Q_OS_WIN64))&&(defined(Q_OS_WIN32) || defined(Q_OS_LINUX32) || defined(Q_OS_SOLARIS32))
++    #if (!defined(Q_OS_WIN64))&&(defined(Q_OS_WIN32) || __SIZEOF_POINTER__ < 8)
+     ui->ListWidget->addItem(new QListWidgetItem(QIcon(ICON_GREEN),QApplication::translate("DlgCheckConfig","Application architecture: 32 bits")));
+     #else
+     ui->ListWidget->addItem(new QListWidgetItem(QIcon(ICON_GREEN),QApplication::translate("DlgCheckConfig","Application architecture: 64 bits")));

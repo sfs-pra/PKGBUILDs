@@ -1,0 +1,36 @@
+Description: Fix uninitialized variable valgrind warnings
+ In wgt_QMultimediaBrowser, initialize FolderTable before FolderTree,
+ because FolderTree calls some FolderTable functions which depended
+ on some still uninitialized variables.
+Author: James Cowgill <jcowgill@debian.org>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/ffDiaporama/wgt_QMultimediaBrowser/wgt_QMultimediaBrowser.cpp
++++ b/src/ffDiaporama/wgt_QMultimediaBrowser/wgt_QMultimediaBrowser.cpp
+@@ -50,19 +50,19 @@ void wgt_QMultimediaBrowser::DoInitWidge
+     ui->UpFolderBt->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileDialogToParent));
+     ui->PreviousFolderBt->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowBack));
+ 
+-    ui->FolderTree->ApplicationConfig       =ApplicationConfig;
+-    ui->FolderTree->FolderTable             =ui->FolderTable;
+-    ui->FolderTree->IsRemoveAllowed         =(BrowserType==BROWSER_TYPE_MainWindow);
+-    ui->FolderTree->IsRenameAllowed         =(BrowserType==BROWSER_TYPE_MainWindow);
+-    ui->FolderTree->IsCreateFolderAllowed   =(BrowserType==BROWSER_TYPE_MainWindow);
+-    ui->FolderTree->InitDrives();
+-
+     ui->FolderTable->InitSettings(ApplicationConfig,BrowserType);
+     ui->FolderTable->IsAddToProjectAllowed  =AllowAddToProject;
+     ui->FolderTable->IsRemoveAllowed        =(BrowserType==BROWSER_TYPE_MainWindow);
+     ui->FolderTable->IsRenameAllowed        =(BrowserType==BROWSER_TYPE_MainWindow);
+     ui->FolderTable->setDragDropMode(AllowDragDrop?QAbstractItemView::DragOnly:QAbstractItemView::NoDragDrop);
+     ui->FolderTable->setSelectionMode(AllowMultipleSelection?QAbstractItemView::ExtendedSelection:QAbstractItemView::SingleSelection);
++
++    ui->FolderTree->ApplicationConfig       =ApplicationConfig;
++    ui->FolderTree->FolderTable             =ui->FolderTable;
++    ui->FolderTree->IsRemoveAllowed         =(BrowserType==BROWSER_TYPE_MainWindow);
++    ui->FolderTree->IsRenameAllowed         =(BrowserType==BROWSER_TYPE_MainWindow);
++    ui->FolderTree->IsCreateFolderAllowed   =(BrowserType==BROWSER_TYPE_MainWindow);
++    ui->FolderTree->InitDrives();
+ }
+ 
+ //====================================================================================================================

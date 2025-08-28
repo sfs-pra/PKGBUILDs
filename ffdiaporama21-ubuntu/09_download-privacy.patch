@@ -1,0 +1,36 @@
+Description: Prevent downloading updates from tuxfamily site
+ In the interests of privacy and security (all updates are done over https and
+ are not validated), disable all network requests to upstream's download
+ server.
+Author: James Cowgill <jcowgill@debian.org>
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/src/ffDiaporama/MainWindow/mainwindow.cpp
++++ b/src/ffDiaporama/MainWindow/mainwindow.cpp
+@@ -690,13 +690,6 @@ void MainWindow::showEvent(QShowEvent *)
+     if (!IsFirstInitDone) {
+         IsFirstInitDone=true;  // do this only one time
+ 
+-        // Check BUILDVERSION to propose to the user to upgrade the application if a new one is available on internet
+-        // Start a network process to give last ffdiaporama version from internet web site
+-        QNetworkAccessManager *mNetworkManager=ApplicationConfig->GetNetworkAccessManager(this);
+-        connect(mNetworkManager,SIGNAL(finished(QNetworkReply*)),this,SLOT(DoCheckBUILDVERSION(QNetworkReply*)));
+-        QUrl            url(BUILDVERSION_WEBURL);
+-        mNetworkManager->get(QNetworkRequest(url));
+-
+         // Set player size and pos
+         SetTimelineHeight();
+         ui->timeline->SetTimelineHeight(ApplicationConfig->PartitionMode);
+--- a/src/ffDiaporama/engine/cApplicationConfig.cpp
++++ b/src/ffDiaporama/engine/cApplicationConfig.cpp
+@@ -381,8 +381,8 @@ QString cApplicationConfig::GetFilterFor
+ //====================================================================================================================
+ 
+ bool cApplicationConfig::DownloadFile(QString FileName) {
+-    DownloadObject Download(FileName,this);
+-    return Download.Status;
++    // Prevent all downloads
++    return false;
+ }
+ 
+ //====================================================================================================================

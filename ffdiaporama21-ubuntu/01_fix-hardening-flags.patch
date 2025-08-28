@@ -1,0 +1,15 @@
+Description: add LDFLAGS and CPPFLAGS to QMAKE flags. This allow the hardening
+ flags to be used to compile ffdiaporama
+Author: Fabrice Coutadeur <coutadeurf@gmail.com>
+--- a/src/ffDiaporama/ffDiaporama.pro
++++ b/src/ffDiaporama/ffDiaporama.pro
+@@ -51,6 +51,9 @@ LIBS        += -lffDiaporama_lib
+ 
+ DEFINES +=SHARE_DIR=\\\"$$PREFIX\\\"
+ 
++QMAKE_LFLAGS += ${LDFLAGS}
++QMAKE_CXXFLAGS += ${CPPFLAGS}
++
+ unix {
+     LIBS   += -L../ffDiaporama_lib
+ 
