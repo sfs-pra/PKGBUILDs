@@ -1,0 +1,36 @@
+# Maintainer: Dorian Wouters <gravgun at openmailbox dot org>
+# Contributor: Pierre Carru <pierre.carru@gmail.com>
+pkgname=lxpanel-multiload-nandhp-plugin-git
+pkgver=20130612
+pkgrel=2
+pkgdesc='Multiload panel plugin for Xfce panel'
+arch=('i686' 'x86_64' aarch64)
+url="http://github.com/nandhp/multiload-nandhp"
+license=('GPL2')
+groups=('lxde')
+depends=('pacman' 'lxpanel0.6' 'libgtop')
+makedepends=('git' 'intltool')
+
+source=('git://github.com/nandhp/multiload-nandhp.git')
+md5sums=('SKIP')
+
+_gitname='multiload-nandhp'
+
+build() {
+    cd $_gitname
+
+    ./autogen.sh
+    ./configure --prefix=/usr \
+        --enable-fast-install \
+        --disable-static --with-lxpanel \
+        --with-xfce4=no
+#        --host=aarch64-unknown-linux-gnu  --build=aarch64-unknown-linux-gnu  \
+    make
+}
+
+package() {
+    cd $_gitname
+    make DESTDIR="$pkgdir" install
+#    rm -f $pkgdir/usr/lib/xfce4/panel/plugins/libmultiload.la
+}
+

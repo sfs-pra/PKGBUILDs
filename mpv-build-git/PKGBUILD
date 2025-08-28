@@ -1,0 +1,199 @@
+# Maintainer: Gustavo Alvarez <sl1pkn07@gmail.com>
+
+pkgname=mpv-build-git
+pkgver=v0.32.0.402.g8e50430
+pkgrel=2
+[ "`uname -m`" = x86_64 ] && lua=52arch && luan=52
+pkgdesc="Video player based on MPlayer/mplayer2 (uses statically linked ffmpeg). (GIT version)"
+arch=(i686 'x86_64' 'aarch64')
+XXdepends=('luajit'  'desktop-file-utils' 'hicolor-icon-theme' 'libass>=0.13'  'libxss' 'libdvdnav')
+depends=(  'alsa-lib' 'bzip2'  'libva' 'libvdpau'
+  'lua'${luan}  'desktop-file-utils' 'hicolor-icon-theme' 'libass>=0.13' 'libvdpau>=0.2' 'libxss' 'libdvdnav')
+
+Xdepends=(
+         'fribidi'
+         'lcms2'
+         'libbluray.so'
+         'libbs2b'
+         'libcaca'
+         'libcdio-paranoia'
+         'libdav1d.so'
+         'libdvdnav'
+         'libgme'
+         'libmysofa'
+         'libplacebo.so'
+         'libshaderc_shared.so'
+         'libsoxr'
+         'libssh'
+         'libva.so'
+         'libvdpau'
+         'libxinerama'
+         'libxkbcommon'
+         'libxrandr'
+         'libxss'
+         'libxv'
+         'luajit'
+         'mujs'
+         'rsound'
+         'rubberband'
+         'sdl2'
+         'sndio'
+         'uchardet'
+         'gnutls'
+         'libarchive'
+         'v4l-utils'
+         'vulkan-icd-loader'
+         )
+license=('GPL2' 'GPL3' 'LGPL3' 'LGPL2.1' 'BSD')
+url='http://mpv.io'
+makedepends=(
+             'git'
+             'python-docutils'
+             'nasm'
+             'fontconfig'
+             'clang'
+             )
+#             'wayland-protocols'
+#             'ffnvcodec-headers'
+optdepends=(
+            'nvidia-utils: for hardware accelerated video decoding with CUDA'
+            'youtube-dl: Another way to view youtuve videos with mpv'
+            'zsh-completions: Additional completion definitions for Zsh users'
+            'bash-completion: Additional completion definitions for Bash users'
+            )
+provides=('mpv'
+          'libmpv.so'
+          )
+conflicts=('mpv'
+           'libmpv.so'
+           )
+options=('!emptydirs')
+source=('git+https://github.com/mpv-player/mpv-build.git'
+        'git+https://github.com/mpv-player/mpv.git'
+         'ffmpeg::git+https://github.com/FFmpeg/FFmpeg.git'
+        'git+https://github.com/libass/libass.git'
+        )
+#        'git+https://github.com/qyot27/ffmpeg.git#branch=avsplus_linux'
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP'
+            )
+backup=('etc/mpv/encoding-profiles.conf')
+
+if [ -f /usr/lib/libvapoursynth.so ]; then
+  depends+=('vapoursynth')
+fi
+
+pkgver() {
+  cd mpv
+  echo "$(git describe --long --tags | tr - .)"
+}
+
+prepare() {
+  cd mpv-build
+  git clone "${srcdir}/mpv"
+  git clone "${srcdir}/ffmpeg"
+#  git clone "${srcdir}/FFmpeg"
+  git clone "${srcdir}/libass"
+
+  # Set ffmpeg/libass/mpv flags
+  _ffmpeg_options=(
+    '--disable-programs'
+        '--enable-gpl'
+        '--enable-runtime-cpudetect'
+        '--enable-avresample'
+        '--enable-pthreads'
+        '--enable-small'
+        '--disable-ffprobe'
+        '--disable-debug'
+        '--disable-doc'
+'--enable-vdpau'
+'--enable-openssl'
+'--enable-nonfree'
+'--enable-version3'
+    )
+
+#4 int mpv
+#        '--enable-shared'
+#        '--disable-static'
+
+
+#'--disable-programs'
+#'--enable-opencl'
+#'--enable-opengl'
+#'--enable-libdrm'
+#'    --enable-v4l2_m2m'
+
+
+  _mpv_options=(
+--prefix=/usr \
+    --confdir=/etc/mpv \
+    --enable-libmpv-shared \
+    --disable-libbluray \
+--enable-dvdnav \
+    --disable-cdda \
+    --disable-rubberband \
+    --disable-vapoursynth \
+    --disable-libavdevice \
+    --disable-pulse \
+--enable-vdpau \
+    --disable-vdpau-gl-x11 \
+    --disable-tv \
+--disable-lcms2 \
+    --disable-dvbin \
+\
+\
+--enable-xv \
+    --lua=$lua \
+--enable-x11 \
+--disable-vaapi \
+--disable-libarchive \
+    --disable-test \
+    --disable-build-date \
+
+    )
+#--enable-libass \
+#    --disable-rsound \
+#    --disable-jack \
+#    --disable-oss-audio \
+#    --disable-libsmbclient \
+#    --disable-libsmbclient \
+#    --lua=luajit
+#--enable-xv \
+#--enable-egl-drm \
+
+
+  echo ${_ffmpeg_options[@]} > ffmpeg_options
+  echo ${_mpv_options[@]} > mpv_options
+
+  cd mpv
+
+  ./bootstrap.py
+}
+
+build() {
+  cd mpv-build
+  ./build
+}
+
+package() {
+  cd mpv-build
+  DESTDIR="${pkgdir}" ./install
+
+  install -Dm755 mpv/TOOLS/mpv_identify.sh "${pkgdir}/usr/bin/mpv-identify"
+  install -Dm755 mpv/TOOLS/idet.sh "${pkgdir}/usr/bin/mpv-idet"
+  install -Dm755 mpv/TOOLS/umpv "${pkgdir}/usr/bin/umpv"
+
+  install -Dm644 mpv/DOCS/encoding.rst "${pkgdir}/usr/share/doc/mpv/encoding.rst"
+  install -Dm644 mpv/DOCS/edl-mpv.rst "${pkgdir}/usr/share/doc/mpv/edl-mpv.rst"
+  install -Dm644 mpv/DOCS/client-api-changes.rst "${pkgdir}/usr/share/doc/mpv/client-api-changes.rst"
+  install -Dm644 mpv/DOCS/contribute.md "${pkgdir}/usr/share/doc/mpv/contribute.md"
+
+#  sed 's|/usr/local/etc/mpv.conf|/etc/mpv.conf|g' -i "${pkgdir}/usr/share/doc/mpv/mpv.conf"
+
+  (cd mpv/TOOLS/lua; for i in $(find . -type f); do install -Dm644 "${i}" "${pkgdir}/usr/share/mpv/scripts/${i}"; done)
+
+  install -Dm644 mpv/LICENSE.GPL "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.GPL"
+  install -Dm644 mpv/LICENSE.GPL "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.LGPL"
+}

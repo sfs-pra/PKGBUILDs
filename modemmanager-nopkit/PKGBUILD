@@ -1,0 +1,80 @@
+# Contributor (Arch): Ionut Biru <ibiru@archlinux.org>
+# Contributor (Arch): Jan Alexander Steffens (heftig) <jan.steffens@gmail.com>
+# Maintainer: André Silva <emulatorman@hyperbola.info>
+
+pkgbase=modemmanager
+pkgname=(modemmanager-nopkit libmm-glib-nopkit)
+pkgver=1.6.4
+pkgrel=3.hyperbola2
+arch=(i686 x86_64)
+url="https://www.freedesktop.org/wiki/Software/ModemManager/"
+#depends=(libgudev polkit ppp libqmi libmbim)
+depends=(libgudev  ppp libqmi libmbim)
+#makedepends=(intltool gtk-doc gobject-introspection vala autoconf-archive)
+makedepends=(intltool )
+source=("https://www.freedesktop.org/software/ModemManager/ModemManager-$pkgver.tar.xz")
+sha512sums=('6b31ce186adce445cec8964df751b6146a86271e6c14d860740ae66cfe296ac2ac4df21079357775ac5f7a5837c80a7f8db21a2680bc6b45802f9928565f1c73')
+
+prepare() {
+  cd ModemManager-$pkgver
+  NOCONFIGURE=1 ./autogen.sh
+}
+
+build() {
+  cd ModemManager-$pkgver
+  ./configure --prefix=/usr \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --with-dbus-sys-dir=/usr/share/dbus-1/system.d \
+        --with-udev-base-dir=/lib/udev \
+    --with-polkit=no \
+        --with-suspend-resume=no \
+        --enable-gtk-doc=no \
+        --disable-static
+
+  # https://bugzilla.gnome.org/show_bug.cgi?id=655517
+  sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+
+  make
+}
+
+check() {
+  cd ModemManager-$pkgver
+  # some failures are "expected"
+  make -k check || true
+}
+
+package_modemmanager-nopkit() {
+  pkgdesc="Mobile broadband modem management service, without systemd support"
+  license=(GPL-2)
+  depends+=(libmm-glib)
+  optdepends=('usb_modeswitch: install if your modem shows up as a storage drive')
+  options=(!emptydirs)
+
+  cd ModemManager-$pkgver
+  make DESTDIR="$pkgdir" install
+  make DESTDIR="$pkgdir" -C libmm-glib uninstall
+  make DESTDIR="$pkgdir" -C vapi uninstall
+
+  install -Dm644 COPYING "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+
+  # Some stuff to move is left over
+  mv "$pkgdir/usr/include" ..
+  mv "$pkgdir/usr/lib/pkgconfig" ..
+}
+
+package_libmm-glib-nopkit() {
+  pkgdesc="ModemManager library"
+  license=(LGPL-2.1)
+  depends=(glib2)
+
+  install -d "$pkgdir/usr/lib"
+  mv include "$pkgdir/usr"
+  mv pkgconfig "$pkgdir/usr/lib"
+
+  cd ModemManager-$pkgver
+  make DESTDIR="$pkgdir" -C libmm-glib install
+  make DESTDIR="$pkgdir" -C vapi install
+
+  install -Dm644 COPYING.LIB "$pkgdir/usr/share/licenses/$pkgname/COPYING.LIB"
+}

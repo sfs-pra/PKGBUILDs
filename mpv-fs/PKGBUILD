@@ -1,0 +1,51 @@
+# $Id$
+# Maintainer:  Bartłomiej Piotrowski <bpiotrowski@archlinux.org>
+# Contributor: Eivind Uggedal <eivind@uggedal.com>
+
+pkgname=mpv-fs
+pkgver=0.3.7
+pkgrel=4
+pkgdesc='Video player based on MPlayer/mplayer2 (ext ffmpeg lib)'
+arch=('i686' 'x86_64')
+license=('GPL')
+url='http://mpv.io'
+depends=( 'ffmpeg' 'lua' 'libass-git' )
+# 'enca')
+# 'portaudio' 'ffmpeg' 'lcms2' 'libdvdread' 'libcdio-paranoia' 'libquvi' 'libgl'
+#  'libxinerama' 'mpg123' 'libxv' 'libxkbcommon' 'libva' 'lirc-utils' 'wayland'
+#  'desktop-file-utils' 'hicolor-icon-theme' 'xdg-utils' 'lua' 'libdvdnav'
+#)
+#makedepends=('mesa' 'python-docutils' 'ladspa')
+makedepends=('lua')
+options=('!emptydirs' '!buildflags')
+install=mpv.install
+source=(https://github.com/mpv-player/$pkgname/archive/v$pkgver.tar.gz)
+md5sums=('0e1398c324775998b0e60fdb11b9e06d')
+
+prepare() {
+  cd $pkgname-$pkgver
+  ./bootstrap.py
+}
+
+build() {
+    which python || ln -s /usr/bin/python2 /usr/bin/python
+  cd $pkgname-$pkgver
+
+  ./waf configure --prefix=/usr \
+    --confdir=/etc/mpv 
+#    --enable-joystick 
+#--disable-libass \
+
+  ./waf build
+}
+
+package() {
+  cd $pkgname-$pkgver
+  ./waf install --destdir="$pkgdir"
+
+  install -d "$pkgdir"/usr/share/doc/mpv/examples
+  install -m644 etc/{input,example}.conf \
+    "$pkgdir"/usr/share/doc/mpv/examples
+  install -m644 DOCS/{encoding.rst,tech-overview.txt} \
+    "$pkgdir"/usr/share/doc/mpv
+}

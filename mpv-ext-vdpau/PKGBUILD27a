@@ -1,0 +1,95 @@
+# Maintainer: Bruno Pagani <bruno.n.pagani at gmail dot com>
+
+pkgbase=mpv
+pkgname=mpv-light
+pkgver=0.27.0
+pkgrel=1
+pkgdesc='Video player based on MPlayer/mplayer2, with selection of features.'
+arch=('i686' 'x86_64')
+license=('GPL')
+url='http://mpv.io'
+#depends=('ffmpeg' 'lcms2' 'libxkbcommon' 'libxrandr' 'libxss' 'lua52' 'uchardet' 'desktop-file-utils' 'hicolor-icon-theme')
+depends=('ffmpeg'  'lua52'  'desktop-file-utils' 'hicolor-icon-theme' 'libass>=0.13' 'libvdpau>=0.2' 'libxss' 'libdvdnav')
+#makedepends=('mesa' 'python-docutils')
+replaces=('mpv')
+provides=('mpv')
+conflicts=('mpv')
+optdepends=('youtube-dl: for video-sharing websites playback')
+options=('!emptydirs' '!buildflags')
+install=mpv.install
+source=("${pkgbase}-${pkgver}.tar.gz::https://github.com/mpv-player/${pkgbase}/archive/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+#a2157174e46db46dad5deb1fde94283e72ebe922fd15447cb16a2a243fae5bda')
+
+prepare() {
+  cd ${pkgbase}-${pkgver}
+[ -f /bin/python ] || sudo ln -s /bin/python2 /bin/python
+  ./bootstrap.py
+}
+
+build() {
+  cd ${pkgbase}-${pkgver}
+
+  ./waf configure --prefix=/usr \
+    --confdir=/etc/mpv \
+    --enable-zsh-comp \
+    --enable-libmpv-shared \
+    --disable-libsmbclient \
+    --disable-libbluray \
+    --disable-dvdread \
+--enable-dvdnav \
+    --disable-cdda \
+    --disable-rubberband \
+    --disable-vapoursynth \
+    --disable-vapoursynth-lazy \
+    --disable-libavdevice \
+    --disable-oss-audio \
+    --disable-rsound \
+    --disable-jack \
+    --disable-pulse \
+--enable-vdpau \
+    --disable-vdpau-gl-x11 \
+    --disable-tv \
+    --disable-tv-v4l2 \
+    --disable-libv4l2 \
+--disable-lcms2 \
+    --disable-dvbin \
+\
+    --enable-encoding \
+\
+--enable-xv \
+--enable-libass \
+    --lua=52arch \
+--enable-x11 \
+--disable-vaapi
+
+# --disable-gl \
+#--enable-vdpau-hwaccel \
+#    --enable-shm \
+#    --enable-termios \
+#    --disable-xinerama \
+#    --disable-libavresample \
+#    --enable-libswresample \
+#    --disable-libguess \
+#    --disable-enca \
+
+#    --disable-pvr \
+#    --disable-libavfilter \
+#--disable-libass # need 4 lua-gui
+#    --enable-egl-x11 \
+#    --lua=52arch \
+#    --enable-uchardet \
+
+  ./waf build
+}
+
+package_mpv-light() {
+  cd ${pkgbase}-${pkgver}
+  ./waf install --destdir="${pkgdir}"
+
+  install -d "${pkgdir}"/usr/share/doc/mpv/examples
+#  install -m644 etc/{input,example}.conf \
+#    "${pkgdir}"/usr/share/doc/mpv/examples
+  install -m644 DOCS/{encoding.rst,tech-overview.txt} \
+    "${pkgdir}"/usr/share/doc/mpv
+}
