@@ -106,9 +106,10 @@ setup_chrome_management_service() {
 remove_legacy_files() {
   local files=(
     "/opt/yandex/browser/partner_config_static"
-#    "/opt/yandex/browser/libffmpeg.so"
     "/opt/yandex/browser/libudev.so.0"
   )
+#    "/opt/yandex/browser/libffmpeg.so"
+
   for file in "${files[@]}"; do
     if [ -f "${file}" ]; then
       rm -f "${file}"
